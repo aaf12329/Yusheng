@@ -9,8 +9,8 @@
 from pathlib import Path
 from typing import Any
 
-from prototype.common import validate_memory, write_json
-from prototype.paths import MEMORY_FILE
+from prototype.Core.common import validate_memory, write_json
+from prototype.Core.paths import MEMORY_FILE
 
 
 def write_memory(memory: dict[str, Any], path: Path = MEMORY_FILE) -> dict[str, Any]:

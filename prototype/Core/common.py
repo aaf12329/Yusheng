@@ -1,4 +1,4 @@
-"""共用层：文件 I/O 与记忆格式校验，不调用功能模块。
+"""运行核心的共用层：文件 I/O 与记忆格式校验，不调用功能模块。
 
 函数结构与调用关系：
 ├─ read_text_file(path) ← read_json、core._load_api_key

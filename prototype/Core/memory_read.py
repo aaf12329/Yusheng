@@ -10,8 +10,8 @@
 from pathlib import Path
 from typing import Any
 
-from prototype.common import read_json, validate_memory
-from prototype.paths import MEMORY_FILE
+from prototype.Core.common import read_json, validate_memory
+from prototype.Core.paths import MEMORY_FILE
 
 
 def read_memory(path: Path = MEMORY_FILE) -> dict[str, Any]:

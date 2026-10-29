@@ -13,8 +13,8 @@ from typing import Any
 
 from openai import APIConnectionError, APIStatusError, APITimeoutError, OpenAI
 
-from prototype.common import read_text_file
-from prototype.paths import ENV_FILE
+from prototype.Core.common import read_text_file
+from prototype.Core.paths import ENV_FILE
 
 
 MODEL = "deepseek-flash"

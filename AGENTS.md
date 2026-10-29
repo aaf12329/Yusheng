@@ -5,7 +5,7 @@
 - 项目名：鱼生 / Yusheng；陪伴角色名：大肥鱼 / Dafeiyu。
 - 远程仓库：[aaf12329/Yusheng](https://github.com/aaf12329/Yusheng)，本地远程名为 `origin`。
 - 目标：探索持续记忆、按需回忆与受控的自主活动。
-- 当前阶段：Python 原型阶段，代码、提示词与记忆目录均在 `prototype/` 下；已编写 JSON 记忆读写与 DeepSeek 调用模块，按当前指令未运行测试或真实 API 调用。
+- 当前阶段：Python 原型阶段，运行核心集中在 `prototype/Core/`，提示词与记忆目录位于其同级；已编写 JSON 记忆读写与 DeepSeek 调用模块，按当前指令未运行测试或真实 API 调用。
 - 原型语言与环境：Python 3.12.0，所有者创建的 venv；项目内解释器为 `myvenv/Scripts/python.exe`，已安装 `openai==3.41.0`。
 - 模型调用：`deepseek-flash`，关闭思考（`thinking.type="disabled"`），非流式（`stream=False`）。
 - 记忆存储：JSON，由所有者明确指定；默认文件为 `prototype/Memory/memories.json`。读写函数分开，暂不实现并发写入。
@@ -36,7 +36,7 @@ CoMind 与本仓库在本机上是同级目录。协作标准只引用 CoMind �
 
 本项目按 Python 工程项目开展原型开发。写代码前从上表的编程规范入口进入，并读取 Python、工程架构及 LLM / Agent 专项标准；规则正文以对应文件为准。
 
-`prototype/paths.py` 是文件位置的唯一地址簿；共用 I/O 与格式校验在 `prototype/common.py`。三个功能模块互不导入，协作由后续入口编排。实际密钥只写本地 `.env`；记忆文件及环境均被忽略。
+`prototype/Core/` 集中存放运行核心，独立行动的大肥鱼不得自行修改该目录及原型包加载代码。`prototype/Core/paths.py` 是文件位置的唯一地址簿；共用 I/O 与格式校验在 `prototype/Core/common.py`。三个功能模块互不导入，协作由后续入口编排。实际密钥只写本地 `.env`；记忆文件及环境均被忽略。
 
 ## 仓库卫生标准
 

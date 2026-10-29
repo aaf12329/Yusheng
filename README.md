@@ -29,9 +29,9 @@ Yusheng's predecessor projects are **DeepSeek_port** and **My_Agent**, both avai
 
 ## 当前状态 / Current status
 
-**Python 原型阶段：代码、提示词和记忆目录均放在 `prototype/` 下。** 已编写 JSON 记忆读写和 DeepSeek 核心调用模块。使用所有者创建的 `myvenv`（Python 3.12.0），模型固定 `deepseek-flash`，关闭思考，非流式返回。按本次要求未运行测试、未进行真实 API 调用；尚未接入对话循环、自动检索或工具执行。
+**Python 原型阶段：运行核心集中在 `prototype/Core/`，提示词和记忆目录位于其同级。** 已编写 JSON 记忆读写和 DeepSeek 核心调用模块。使用所有者创建的 `myvenv`（Python 3.12.0），模型固定 `deepseek-flash`，关闭思考，非流式返回。按本次要求未运行测试、未进行真实 API 调用；尚未接入对话循环、自动检索或工具执行。
 
-**Python prototype stage: code, prompts, and the memory directory live under `prototype/`.** JSON memory read/write and a DeepSeek adapter have been written. The owner's `myvenv` uses Python 3.12.0. The adapter fixes the model to `deepseek-flash`, disables thinking, and returns non-streaming responses. No tests or live API calls were run, as requested. Conversation orchestration, automatic retrieval, and tool execution are not implemented yet.
+**Python prototype stage: the runtime core lives in `prototype/Core/`, alongside the prompt and memory directories.** JSON memory read/write and a DeepSeek adapter have been written. The owner's `myvenv` uses Python 3.12.0. The adapter fixes the model to `deepseek-flash`, disables thinking, and returns non-streaming responses. No tests or live API calls were run, as requested. Conversation orchestration, automatic retrieval, and tool execution are not implemented yet.
 
 ## 初步方向 / Initial direction
 
@@ -46,9 +46,9 @@ The following items describe future work; only standalone modules exist so far, 
 | 按需回忆 / On-demand recall | 在上下文预算内检索相关记忆，并能追溯原始记录。 / Retrieve relevant memories within a context budget while retaining source traceability. |
 | 自主活动 / Autonomous activities | 逐步接入扩展，明确活动权限、资源预算与停止机制。 / Introduce extensions with explicit permissions, resource budgets, and stop controls. |
 
-核心代码由人维护；运行中的大肥鱼不自行修改核心代码。记忆注入比例、活动频率和 token 预算均需通过实际运行确定。
+运行核心统一放在 `prototype/Core/`，由人维护；运行中的大肥鱼不自行修改该目录及模块加载代码，自写工具作为目录之外的独立扩展。记忆注入比例、活动频率和 token 预算均需通过实际运行确定。
 
-Core code is maintained by humans; the running companion does not modify it autonomously. Memory allocation, activity frequency, and token budgets will be determined through experiments.
+The runtime core is kept in `prototype/Core/` and maintained by humans; the running companion does not modify that directory or module-loading code autonomously. Self-written tools belong outside the core. Memory allocation, activity frequency, and token budgets will be determined through experiments.
 
 ## 仓库结构 / Repository layout
 
@@ -59,13 +59,16 @@ Yusheng/
 ├── .gitignore     本地数据与生成物忽略规则 / Local data and generated-file exclusions
 ├── .env.example   本地密钥文件模板 / Local credential template
 ├── requirements.txt
+├── Copolient.png  所有者提供的图片 / Owner-provided image
 └── prototype/
     ├── __init__.py
-    ├── paths.py          路径地址簿 / File locations
-    ├── common.py         共用 JSON I/O 与格式校验 / Shared I/O and validation
-    ├── memory_read.py    记忆读取 / Memory reading
-    ├── memory_write.py   记忆写入 / Memory writing
-    ├── core.py           DeepSeek 核心调用 / DeepSeek adapter
+    ├── Core/             运行核心 / Runtime core
+    │   ├── __init__.py
+    │   ├── paths.py          路径地址簿 / File locations
+    │   ├── common.py         共用 JSON I/O 与格式校验 / Shared I/O and validation
+    │   ├── memory_read.py    记忆读取 / Memory reading
+    │   ├── memory_write.py   记忆写入 / Memory writing
+    │   └── core.py           DeepSeek 核心调用 / DeepSeek adapter
     ├── PromptSQL/
     │   ├── initial_prompt.md  大肥鱼初始提示词 / Initial persona prompt
     │   └── README.md          提示词用途与社区参考 / Usage and community references
@@ -103,8 +106,8 @@ Memory is a JSON object containing a list of entries. `version` is the integer `
 ```
 
 ```python
-from prototype.memory_read import read_memory
-from prototype.memory_write import write_memory
+from prototype.Core.memory_read import read_memory
+from prototype.Core.memory_write import write_memory
 
 memory = read_memory()
 next_id = max((item["id"] for item in memory["memories"]), default=0) + 1
@@ -124,9 +127,9 @@ print(result)  # {"path": 实际文件路径, "count": 当前条目数}
 If `.env` does not exist, copy `.env.example` to `.env` and fill in `DEEPSEEK_API_KEY`. The loader reads this single-line setting, supports matching quotes, and does not support interpolation or inline comments. Never commit `.env`.
 
 ```python
-from prototype.core import call_model
-from prototype.common import read_text_file
-from prototype.paths import INITIAL_PROMPT_FILE
+from prototype.Core.core import call_model
+from prototype.Core.common import read_text_file
+from prototype.Core.paths import INITIAL_PROMPT_FILE
 
 result = call_model([
     {"role": "system", "content": read_text_file(INITIAL_PROMPT_FILE)},
@@ -166,7 +169,7 @@ Calling `call_model()` sends the supplied messages to DeepSeek and incurs API us
 └── call_model(messages) → _load_api_key → read_text_file
                        → DeepSeek chat.completions.create
 
-paths.py → 为各模块提供文件位置 / File locations for all modules
+Core/paths.py → 为各模块提供文件位置 / File locations for all modules
 ```
 
 读、写、模型三个功能模块互不导入。记忆不会自动送给模型，也不会从模型回复中自动提取；这些由后续入口编排。当前不提供工具注册和 Agent 循环。
