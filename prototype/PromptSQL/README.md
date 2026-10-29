@@ -20,3 +20,9 @@ Consulted on 2026-10-29. These are community interpretations for their respectiv
 来源说明留在本文件；调用时仅读取 `initial_prompt.md` 的正文。核心模块仍由调用方传入 `messages`，不会自动加载本目录。
 
 Only the contents of `initial_prompt.md` should be sent as the system prompt. Source notes stay here. The core adapter still accepts caller-supplied `messages`; it does not automatically load prompts.
+
+## 项目内自主扩展约定 / Project-specific autonomy
+
+`initial_prompt.md` 的「自主工具与运行内核」一节来自所有者于 2026-10-29 的明确指示，定义自主编写工具与独立行动的内核边界，不属于引用的社区角色设定。当前原型尚未实现工具执行、权限隔离或内核写入保护；提示词约定不等于这些机制已经实现。
+
+The autonomy section follows the owner's explicit instruction on 2026-10-29 and is specific to Yusheng. Tool execution, permission isolation, and runtime write protection are not implemented yet; the prompt states the intended behavior rather than enforcing it in code.

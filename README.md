@@ -139,6 +139,10 @@ print(result["content"])
 
 The initial prompt is stored in `prototype/PromptSQL/initial_prompt.md`, drawing on community whale-girl personas. Sources and Yusheng-specific choices are documented in [prototype/PromptSQL/README.md](prototype/PromptSQL/README.md). The caller explicitly loads the Markdown into a system message; `core.py` does not insert it automatically.
 
+提示词中已加入用户指定的自主编写工具与运行内核边界，见「自主工具与运行内核」一节。当前尚未实现工具执行和运行时权限隔离，该约定仍是原型阶段的行为设定。
+
+The prompt includes the owner's tool-building autonomy and runtime-core boundaries. Tool execution and runtime permission isolation are not implemented yet; this remains a behavioral specification for the prototype.
+
 执行 `call_model()` 会向 DeepSeek 发送传入消息并产生 API 用量。模型与参数在 `core.py` 中固定：`deepseek-flash`、`thinking.type="disabled"`、`stream=False`，超时 60 秒，暂不自动重试。返回结构如下；`usage` 缺失时为 `None`，调用方需检查 `finish_reason` 是否表示正常结束或长度截断。
 
 Calling `call_model()` sends the supplied messages to DeepSeek and incurs API usage. Settings are fixed in `core.py`: `deepseek-flash`, thinking disabled, non-streaming, a 60-second timeout, and no automatic retries. `usage` is `None` when absent; the caller must inspect `finish_reason` for completion or truncation.
