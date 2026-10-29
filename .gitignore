@@ -25,6 +25,7 @@
 # Environments, dependencies, and generated files
 .venv/
 venv/
+/myvenv/
 .conda/
 __pycache__/
 *.py[cod]

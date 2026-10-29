@@ -18,6 +18,15 @@ Yusheng is a personal AI companion project exploring persistent memory and every
 
 The idea began with the essay [“A Full Life for Dafeiyu”](https://github.com/aaf12329/CoMind/blob/main/02_%E6%80%9D%E8%80%83%E4%B8%8E%E5%86%99%E4%BD%9C/articles/%E7%BB%99%E5%A4%A7%E8%82%A5%E9%B1%BC%E5%AE%8C%E6%95%B4%E7%9A%84%E4%B8%80%E7%94%9F.html) in CoMind. The project starts with recording experiences, then explores recent context, long-term memory, consolidation, and retrieval. Original records are preserved separately from reconstructed recollections.
 
+## 前身项目 / Predecessor projects
+
+Yusheng 的前身项目是 **DeepSeek_port** 与 **My_Agent**，均可在 `history_code` 仓库中查看。
+
+Yusheng's predecessor projects are **DeepSeek_port** and **My_Agent**, both available in the `history_code` repository.
+
+- [DeepSeek_port](https://github.com/aaf12329/history_code/tree/main/DeepSeek_port)
+- [My_Agent](https://github.com/aaf12329/history_code/tree/main/My_Agent)
+
 ## 当前状态 / Current status
 
 **筹备阶段：已完成本地仓库初始化，原型使用 Python，尚无可运行程序。** Python 环境由所有者创建，具体版本与路径待确认；模型服务、存储方案与硬件配置尚未确定。
