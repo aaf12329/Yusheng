@@ -1,0 +1,47 @@
+# Credentials and local overrides
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Personal conversations, memories, and runtime data
+/data/
+/memory/
+/memories/
+/conversations/
+/logs/
+/backups/
+/uploads/
+/downloads/
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+*.log
+
+# Environments, dependencies, and generated files
+.venv/
+venv/
+.conda/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+node_modules/
+dist/
+build/
+coverage/
+.cache/
+
+# Local scratch space and editor/OS files
+/work/
+/tmp/
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+Desktop.ini
