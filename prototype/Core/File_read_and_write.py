@@ -1,23 +1,19 @@
-"""文件读写层：JSON 聊天记忆与 Markdown Prompt，不导入模型核或保护模块。
+"""文件读写层：仅四个函数，负责 JSON 聊天记忆与 Markdown Prompt 的实际 I/O。
 
 函数结构与真实调用关系：
-├─ Memory_json_read(path) → _file_path → _read_text → json.loads → _validate_memory
-│                                                              → _validate_embedding
-├─ Memory_json_write(memory, path) → _file_path → _validate_memory → _validate_embedding
-│                                            → json.dumps → _write_text
-├─ file_read(path) → _file_path → _read_text
-└─ file_write(path, content) → _file_path → _write_text
-调用：入口先通过 Tools_protect 检查路径，再调用四个公开读写函数；common 暂不使用。
-数据流：.json ↔ {"version": 1, "messages": [原始消息 + embedding / embedding_model]}；.md ↔ str。
-契约：JSON 读返回完整文档，缺失返回空库；写返回 {"path": str, "count": 消息数}。
+├─ Memory_json_read(path) → 文件读取 → 文本解码 → json.loads
+├─ Memory_json_write(memory, path) → json.dumps → 临时文件 → 原子替换
+├─ file_read(path) → 文件读取 → 文本解码
+└─ file_write(path, content) → 临时文件 → 原子替换
+调用：入口先通过 Tools_protect 检查路径，再调用本层；common 暂不使用。
+数据流：.json ↔ 聊天记忆文档；.md ↔ str。
+契约：JSON 读返回对象，缺失返回空库；写返回 {"path": str, "count": 消息数}。
       Markdown 读返回 str，缺失报错；写返回 {"path": str, "characters": 字符数}。
-写入完整覆盖、UTF-8 原子替换、单写入者；不自动迁移旧 memories 格式。
-缺失的向量字段在返回文档中补为 None；不修改调用方传入的文档或自动生成向量。
-本层只检查文件类型与数据格式，路径权限必须由调用入口先行检查。
+本层检查文件后缀和基本输入类型；聊天结构与向量字段由入口校验。
+按当前四函数约定，各函数内直接完成 I/O；UTF-8 原子覆盖，单写入者。
 """
 
 import json
-import math
 import os
 import tempfile
 from pathlib import Path
@@ -26,29 +22,37 @@ from typing import Any
 from prototype.Core.paths import MEMORY_FILE, PROJECT_ROOT
 
 
-# ① 私有 I/O 与格式处理：公开函数共享这些实现。
-def _file_path(path: Path | str, suffix: str) -> Path:
-    """统一解析读写路径并检查文件后缀；供本模块四个公开函数调用。"""
+def Memory_json_read(path: Path | str = MEMORY_FILE) -> dict[str, Any]:
+    """读取 JSON 对象；由入口在路径检查后调用，结构校验由入口负责。"""
     path = Path(path)
-    if not path.is_absolute():
-        path = PROJECT_ROOT / path
-    path = path.resolve()
-    if path.suffix.lower() != suffix:
-        raise ValueError(f"此函数仅支持 {suffix} 文件；请检查文件后缀。")
-    return path
-
-
-def _read_text(path: Path) -> str:
-    """读取 UTF-8/BOM 文本并兼容旧 GB18030；供 JSON 和 Markdown 读取共用。"""
-    raw = path.read_bytes()
+    path = (path if path.is_absolute() else PROJECT_ROOT / path).resolve()
+    if path.suffix.lower() != ".json":
+        raise ValueError("记忆读取仅支持 .json 文件。")
     try:
-        return raw.decode("utf-8-sig")
-    except UnicodeDecodeError:
-        return raw.decode("gb18030")
+        raw = path.read_bytes()
+        try:
+            text = raw.decode("utf-8-sig")
+        except UnicodeDecodeError:
+            text = raw.decode("gb18030")
+        memory = json.loads(text)
+    except FileNotFoundError:
+        return {"version": 1, "messages": []}
+    except (json.JSONDecodeError, UnicodeError) as exc:
+        raise ValueError(f"聊天记忆 JSON 无法解析：{path}；请修正格式或从备份恢复。") from exc
+    if not isinstance(memory, dict):
+        raise ValueError("聊天记忆 JSON 顶层必须是对象。")
+    return memory
 
 
-def _write_text(path: Path, content: str) -> None:
-    """先写同目录临时文件，再原子替换；供 JSON 与 Markdown 写入共用。"""
+def Memory_json_write(memory: dict[str, Any], path: Path | str = MEMORY_FILE) -> dict[str, Any]:
+    """原子覆盖 JSON 记忆；由入口完成路径、消息与向量校验后调用。"""
+    path = Path(path)
+    path = (path if path.is_absolute() else PROJECT_ROOT / path).resolve()
+    if path.suffix.lower() != ".json":
+        raise ValueError("记忆写入仅支持 .json 文件。")
+    if not isinstance(memory, dict) or not isinstance(memory.get("messages"), list):
+        raise ValueError("写入的记忆必须是含 messages 列表的 JSON 对象。")
+    content = json.dumps(memory, ensure_ascii=False, indent=2, allow_nan=False) + "\n"
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary_path = None
     try:
@@ -64,82 +68,43 @@ def _write_text(path: Path, content: str) -> None:
     finally:
         if temporary_path is not None:
             temporary_path.unlink(missing_ok=True)
-
-
-def _validate_embedding(message: dict[str, Any], index: int) -> None:
-    """检查向量与其生成模型是否配套且数值有限；由记忆校验调用，不生成向量。"""
-    vector = message.get("embedding")
-    model = message.get("embedding_model")
-    if vector is None and model is None:
-        return
-    if not isinstance(model, str) or not model.strip():
-        raise ValueError(f"第 {index} 条消息有向量时，embedding_model 必须填写生成模型名称。")
-    if not isinstance(vector, list) or not vector:
-        raise ValueError(f"第 {index} 条消息的 embedding 必须是非空数值列表，并与模型名称一起填写。")
-    for value in vector:
-        if type(value) not in (int, float) or (type(value) is float and not math.isfinite(value)):
-            raise ValueError(f"第 {index} 条消息的 embedding 只能包含有限数值，不能包含布尔值。")
-
-
-def _validate_memory(memory: Any) -> dict[str, Any]:
-    """校验完整文本对话与向量字段，返回补齐字段的副本；由 JSON 读写共用。"""
-    if not isinstance(memory, dict) or type(memory.get("version")) is not int or memory["version"] != 1:
-        raise ValueError("聊天记忆必须是 version 为整数 1 的 JSON 对象。")
-    messages = memory.get("messages")
-    if not isinstance(messages, list):
-        raise ValueError("聊天记忆需要 messages 列表；旧 memories 格式请保留另存，不自动转换。")
-    if len(messages) % 2:
-        raise ValueError("聊天记忆需要完整的 user/assistant 消息对；请修复后再继续。")
-    records = []
-    for index, message in enumerate(messages):
-        expected_role = "user" if index % 2 == 0 else "assistant"
-        if not isinstance(message, dict) or message.get("role") != expected_role:
-            raise ValueError(f"第 {index + 1} 条消息的 role 应为 {expected_role}。")
-        content = message.get("content")
-        if not isinstance(content, str) or not content.strip():
-            raise ValueError(f"第 {index + 1} 条消息的 content 必须是非空字符串。")
-        if message.get("tool_calls") or message.get("function_call"):
-            raise ValueError("当前聊天记忆只支持文本对话；工具调用记录需接入工具循环后处理。")
-        _validate_embedding(message, index + 1)
-        records.append({
-            **message,
-            "embedding": message.get("embedding"),
-            "embedding_model": message.get("embedding_model"),
-        })
-    return {**memory, "messages": records}
-
-
-# ② 四个公开入口：只承担记忆 JSON 与 Prompt Markdown 的读写。
-def Memory_json_read(path: Path | str = MEMORY_FILE) -> dict[str, Any]:
-    """读取并校验聊天记忆；由入口在路径检查通过后调用，文件缺失返回空库。"""
-    path = _file_path(path, ".json")
-    try:
-        memory = json.loads(_read_text(path))
-    except FileNotFoundError:
-        return {"version": 1, "messages": []}
-    except (json.JSONDecodeError, UnicodeError) as exc:
-        raise ValueError(f"聊天记忆 JSON 无法解析：{path}；请修正格式或从备份恢复。") from exc
-    return _validate_memory(memory)
-
-
-def Memory_json_write(memory: dict[str, Any], path: Path | str = MEMORY_FILE) -> dict[str, Any]:
-    """校验并原子覆盖完整聊天记忆；由入口在路径检查通过后调用。"""
-    path = _file_path(path, ".json")
-    memory = _validate_memory(memory)
-    content = json.dumps(memory, ensure_ascii=False, indent=2, allow_nan=False) + "\n"
-    _write_text(path, content)
     return {"path": str(path), "count": len(memory["messages"])}
 
 
 def file_read(path: Path | str) -> str:
-    """读取 .md 正文；由入口在路径检查通过后调用，文件缺失时报错。"""
-    return _read_text(_file_path(path, ".md"))
+    """读取 .md 正文；由入口在路径检查通过后调用，缺失时报错。"""
+    path = Path(path)
+    path = (path if path.is_absolute() else PROJECT_ROOT / path).resolve()
+    if path.suffix.lower() != ".md":
+        raise ValueError("Prompt 读取仅支持 .md 文件。")
+    raw = path.read_bytes()
+    try:
+        return raw.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        return raw.decode("gb18030")
 
 
 def file_write(path: Path | str, content: str) -> dict[str, Any]:
     """UTF-8 原子覆盖 .md 正文；由入口在路径检查通过后调用。"""
-    path = _file_path(path, ".md")
+    path = Path(path)
+    path = (path if path.is_absolute() else PROJECT_ROOT / path).resolve()
+    if path.suffix.lower() != ".md":
+        raise ValueError("Prompt 写入仅支持 .md 文件。")
     if not isinstance(content, str):
         raise ValueError("Markdown 正文 content 必须是字符串。")
-    _write_text(path, content)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary_path = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8", newline="\n", dir=path.parent,
+            prefix=f".{path.name}.", suffix=".tmp", delete=False,
+        ) as handle:
+            temporary_path = Path(handle.name)
+            handle.write(content)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary_path, path)
+    finally:
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
     return {"path": str(path), "characters": len(content)}

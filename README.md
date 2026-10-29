@@ -122,20 +122,20 @@ The conversation store is `prototype/Memory/conversation.json`, created on the f
 | `embedding` | 当前为 `null`；生成后保存非空数值数组。 / Currently `null`; later a nonempty numeric vector. |
 | `embedding_model` | 当前为 `null`；有向量时记录实际生成该向量的模型名称或版本。 / Currently `null`; identifies the model/version that produced the stored vector. |
 
-两个字段一起为空，或一起填写；向量不接受非有限数值或布尔值。旧记录缺少字段时，读取返回的副本会补齐为 `null`，直到正常写入时才保存到磁盘。当前不生成向量、不调用 embedding 服务、不执行相似度检索。以后更换向量模型时，保留旧向量对应的模型标识，并按模型与向量维度区分比较。
+两个字段一起为空，或一起填写；向量不接受非有限数值或布尔值。入口读取记录后统一校验；旧记录缺少字段时，在校验返回的副本中补为 `null`，正常写入时才保存到磁盘。当前不生成向量、不调用 embedding 服务、不执行相似度检索。以后更换向量模型时，保留旧向量对应的模型标识，并按模型与向量维度区分比较。
 
-Both fields are null together or populated together. Vector values must be finite numbers, not booleans. Missing fields in older records are filled with nulls in the returned copy and reach disk only on a normal write. No embedding generation, service calls, or similarity retrieval are implemented. When changing embedding models, retain each stored vector's producer identity and compare compatible models and dimensions.
+Both fields are null together or populated together. Vector values must be finite numbers, not booleans. The entry validates loaded records, filling missing fields with nulls in the returned copy; these reach disk only on a normal write. No embedding generation, service calls, or similarity retrieval are implemented. When changing embedding models, retain each stored vector's producer identity and compare compatible models and dimensions.
 
 | 函数 / Function | 行为与返回 / Behavior and return |
 | --- | --- |
 | `Memory_json_read(path=MEMORY_FILE)` | 读取记忆，缺失返回 `{"version": 1, "messages": []}`。 / Read memory, or an empty store if missing. |
-| `Memory_json_write(memory, path=MEMORY_FILE)` | 校验并覆盖 JSON，返回 `{"path": str, "count": 消息数}`。 / Validate and replace JSON; count is the number of messages. |
+| `Memory_json_write(memory, path=MEMORY_FILE)` | 序列化并覆盖 JSON，返回 `{"path": str, "count": 消息数}`。 / Serialize and replace JSON; count is the number of messages. |
 | `file_read(path)` | 读取 `.md` 正文，返回 `str`；缺失报错。 / Read Markdown text; missing files raise an error. |
 | `file_write(path, content)` | 覆盖 `.md`，返回 `{"path": str, "characters": int}`。 / Replace Markdown text and return its character count. |
 
-实际 I/O 集中在 `File_read_and_write.py` 的私有辅助函数中，JSON 和 Markdown 共用文本读取与原子写入。读取兼容 UTF-8/BOM 和 GB18030；写入使用 UTF-8、同目录临时文件和原子替换，按需创建父目录，不自动合并或处理并发。Markdown 不额外解析，不自动追加换行。
+`File_read_and_write.py` 仅定义上面四个函数，各自直接完成读写，不额外定义辅助函数。路径保护由 `Tools_protect.py` 负责，聊天结构与向量校验由 `main.py` 负责。读取兼容 UTF-8/BOM 和 GB18030；写入使用 UTF-8、同目录临时文件和原子替换，按需创建父目录，不自动合并或处理并发。Markdown 不额外解析，不自动追加换行。
 
-Actual I/O lives in private helpers in `File_read_and_write.py`. JSON and Markdown share reading and atomic writes. Reading supports UTF-8/BOM and GB18030. Writes use UTF-8 and a same-directory temporary file, creating parent directories as needed without merging or concurrency coordination. Markdown is plain text, with no automatic newline.
+`File_read_and_write.py` defines only the four functions above, with I/O implemented directly inside them. `Tools_protect.py` handles path protection, while `main.py` validates conversation structure and embeddings. Reading supports UTF-8/BOM and GB18030. Writes use UTF-8 and a same-directory temporary file, creating parent directories as needed without merging or concurrency coordination. Markdown is plain text, with no automatic newline.
 
 ## 路径保护 / Path protection
 
@@ -147,9 +147,9 @@ Actual I/O lives in private helpers in `File_read_and_write.py`. JSON and Markdo
 
 Protected lists live in `paths.py`: the core, startup/package-loading code, Git, environments, dependency caches, and `.env` credentials are unavailable to file tools. The entry checks before reading or saving. Future LLM file-tool dispatch must also check first, then pass the approved absolute path to the I/O function.
 
-四个读写函数只负责类型、格式和 I/O，不自行调用保护模块。以下展示先检查、再读取的入口编排；写入时使用 `"write"` 检查。`MARKDOWN_FILE` 是忽略目录下可选的 `Memory/notes.md` 示例路径。
+四个读写函数只负责文件后缀、基本输入类型和 I/O，不自行调用保护模块或校验聊天业务结构。以下展示先检查、再读取的入口编排；写入时使用 `"write"` 检查。`MARKDOWN_FILE` 是忽略目录下可选的 `Memory/notes.md` 示例路径。
 
-The four I/O functions handle types, formats, and I/O without importing protection. The example shows entry-level checks before reading; use `"write"` before writing. `MARKDOWN_FILE` optionally points to the ignored `Memory/notes.md` example location.
+The four I/O functions handle suffixes, basic input types, and I/O without importing protection or validating conversation semantics. The example shows entry-level checks before reading; use `"write"` before writing. `MARKDOWN_FILE` optionally points to the ignored `Memory/notes.md` example location.
 
 ```python
 from prototype.Core.File_read_and_write import file_read
@@ -186,10 +186,12 @@ main（每轮 / each turn）
 ├── _read_context
 │   ├── Tools_protect.check_tool_path → 允许路径 / approved path
 │   └── File_read_and_write.Memory_json_read / file_read
+│       → _validate_memory → _validate_embedding
 ├── 获取输入 / input
 ├── _reply → core.call_model → DeepSeek
 ├── 打印回复 / print
 └── _save_memory
+    ├── _validate_memory → _validate_embedding
     ├── Tools_protect.check_tool_path → 允许路径 / approved path
     └── File_read_and_write.Memory_json_write
 

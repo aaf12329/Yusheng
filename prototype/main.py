@@ -4,8 +4,10 @@
 main()（每轮）
 ├─ _read_context → _checked_path → Tools_protect.check_tool_path
 │                → File_read_and_write.Memory_json_read / file_read
+│                → _validate_memory → _validate_embedding
 ├─ _reply → core.call_model
-└─ _save_memory → _checked_path → File_read_and_write.Memory_json_write
+└─ _save_memory → _validate_memory → _validate_embedding
+                → _checked_path → File_read_and_write.Memory_json_write
 数据流：conversation.json + initial_prompt.md + user_input → DeepSeek
         → 原始 assistant 消息 → 终端 → conversation.json。
 契约：user 与 assistant 各为独立记录，分别含 embedding / embedding_model；
@@ -14,6 +16,7 @@ main()（每轮）
 运行：从仓库根目录执行 python -m prototype.main；导入本模块不读写文件或请求 API。
 """
 
+import math
 from pathlib import Path
 from typing import Any
 
@@ -32,9 +35,52 @@ def _checked_path(path: Path, operation: str) -> str:
     return str(result["path"])
 
 
+def _validate_embedding(message: dict[str, Any], index: int) -> None:
+    """检查向量与其生成模型是否配套且数值有限；由记忆校验调用，不生成向量。"""
+    vector = message.get("embedding")
+    model = message.get("embedding_model")
+    if vector is None and model is None:
+        return
+    if not isinstance(model, str) or not model.strip():
+        raise ValueError(f"第 {index} 条消息有向量时，embedding_model 必须填写生成模型名称。")
+    if not isinstance(vector, list) or not vector:
+        raise ValueError(f"第 {index} 条消息的 embedding 必须是非空数值列表，并与模型名称一起填写。")
+    for value in vector:
+        if type(value) not in (int, float) or (type(value) is float and not math.isfinite(value)):
+            raise ValueError(f"第 {index} 条消息的 embedding 只能包含有限数值，不能包含布尔值。")
+
+
+def _validate_memory(memory: Any) -> dict[str, Any]:
+    """校验完整文本对话与向量字段，返回补齐字段的副本；由入口读取与保存流程共用。"""
+    if not isinstance(memory, dict) or type(memory.get("version")) is not int or memory["version"] != 1:
+        raise ValueError("聊天记忆必须是 version 为整数 1 的 JSON 对象。")
+    messages = memory.get("messages")
+    if not isinstance(messages, list):
+        raise ValueError("聊天记忆需要 messages 列表；旧 memories 格式请保留另存，不自动转换。")
+    if len(messages) % 2:
+        raise ValueError("聊天记忆需要完整的 user/assistant 消息对；请修复后再继续。")
+    records = []
+    for index, message in enumerate(messages):
+        expected_role = "user" if index % 2 == 0 else "assistant"
+        if not isinstance(message, dict) or message.get("role") != expected_role:
+            raise ValueError(f"第 {index + 1} 条消息的 role 应为 {expected_role}。")
+        content = message.get("content")
+        if not isinstance(content, str) or not content.strip():
+            raise ValueError(f"第 {index + 1} 条消息的 content 必须是非空字符串。")
+        if message.get("tool_calls") or message.get("function_call"):
+            raise ValueError("当前聊天记忆只支持文本对话；工具调用记录需接入工具循环后处理。")
+        _validate_embedding(message, index + 1)
+        records.append({
+            **message,
+            "embedding": message.get("embedding"),
+            "embedding_model": message.get("embedding_model"),
+        })
+    return {**memory, "messages": records}
+
+
 def _read_context() -> tuple[dict[str, Any], str]:
     """每轮先读取聊天记忆，再读取初始 Prompt；由 main 调用。"""
-    memory = Memory_json_read(_checked_path(MEMORY_FILE, "read"))
+    memory = _validate_memory(Memory_json_read(_checked_path(MEMORY_FILE, "read")))
     prompt = file_read(_checked_path(INITIAL_PROMPT_FILE, "read"))
     if not prompt.strip():
         raise ValueError("初始 Prompt 为空；请补充 prototype/PromptSQL/initial_prompt.md。")
@@ -43,6 +89,7 @@ def _read_context() -> tuple[dict[str, Any], str]:
 
 def _save_memory(memory: dict[str, Any]) -> bool:
     """保存本轮完整记忆；由 main 调用，失败时允许只重试文件写入。"""
+    memory = _validate_memory(memory)
     while True:
         try:
             Memory_json_write(memory, _checked_path(MEMORY_FILE, "write"))
