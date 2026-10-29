@@ -1,0 +1,2 @@
+# Version already installed in the owner's Python environment.
+openai==3.41.0
