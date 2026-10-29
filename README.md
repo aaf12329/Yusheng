@@ -29,15 +29,15 @@ Yusheng's predecessor projects are **DeepSeek_port** and **My_Agent**, both avai
 
 ## 当前状态 / Current status
 
-**Python 原型阶段：运行核心集中在 `prototype/Core/`，提示词和记忆目录位于其同级。** 已编写 JSON 记忆读写和 DeepSeek 核心调用模块。使用所有者创建的 `myvenv`（Python 3.12.0），模型固定 `deepseek-flash`，关闭思考，非流式返回。按本次要求未运行测试、未进行真实 API 调用；尚未接入对话循环、自动检索或工具执行。
+**Python 原型阶段：运行核心集中在 `prototype/Core/`，提示词和记忆目录位于其同级。** 已编写 JSON 记忆读写、DeepSeek 调用模块和命令行聊天入口 `prototype/main.py`。使用所有者创建的 `myvenv`（Python 3.12.0），模型固定 `deepseek-flash`，关闭思考，非流式返回。按本次要求未运行测试、未进行真实 API 调用；聊天入口尚未运行验证，长期记忆接入、自动检索和工具执行仍待实现。
 
-**Python prototype stage: the runtime core lives in `prototype/Core/`, alongside the prompt and memory directories.** JSON memory read/write and a DeepSeek adapter have been written. The owner's `myvenv` uses Python 3.12.0. The adapter fixes the model to `deepseek-flash`, disables thinking, and returns non-streaming responses. No tests or live API calls were run, as requested. Conversation orchestration, automatic retrieval, and tool execution are not implemented yet.
+**Python prototype stage: the runtime core lives in `prototype/Core/`, alongside the prompt and memory directories.** JSON memory read/write, a DeepSeek adapter, and the command-line chat entry `prototype/main.py` have been written. The owner's `myvenv` uses Python 3.12.0. The adapter fixes the model to `deepseek-flash`, disables thinking, and returns non-streaming responses. No tests or live API calls were run, as requested. The chat entry has not been run; long-term memory integration, automatic retrieval, and tool execution remain unimplemented.
 
 ## 初步方向 / Initial direction
 
-以下是后续方向；当前只提供独立模块，整体流程仍待实现和验证。
+以下是后续方向；当前已编写基础模块和命令行聊天流程，完整记忆与自主活动流程仍待实现和验证。
 
-The following items describe future work; only standalone modules exist so far, and the full workflow remains to be implemented and validated.
+The following items describe future work. Basic modules and a command-line chat flow have been written; the full memory and autonomous-activity workflow remains to be implemented and validated.
 
 | 方向 / Area | 目标 / Goal |
 | --- | --- |
@@ -46,9 +46,9 @@ The following items describe future work; only standalone modules exist so far, 
 | 按需回忆 / On-demand recall | 在上下文预算内检索相关记忆，并能追溯原始记录。 / Retrieve relevant memories within a context budget while retaining source traceability. |
 | 自主活动 / Autonomous activities | 逐步接入扩展，明确活动权限、资源预算与停止机制。 / Introduce extensions with explicit permissions, resource budgets, and stop controls. |
 
-运行核心统一放在 `prototype/Core/`，由人维护；运行中的大肥鱼不自行修改该目录及模块加载代码，自写工具作为目录之外的独立扩展。记忆注入比例、活动频率和 token 预算均需通过实际运行确定。
+运行核心模块统一放在 `prototype/Core/`，启动入口为 `prototype/main.py`，均由人维护；运行中的大肥鱼不自行修改这些文件及模块加载代码，自写工具作为独立扩展。记忆注入比例、活动频率和 token 预算均需通过实际运行确定。
 
-The runtime core is kept in `prototype/Core/` and maintained by humans; the running companion does not modify that directory or module-loading code autonomously. Self-written tools belong outside the core. Memory allocation, activity frequency, and token budgets will be determined through experiments.
+Runtime modules in `prototype/Core/` and the startup entry `prototype/main.py` are maintained by humans; the running companion does not modify them or module-loading code autonomously. Self-written tools belong outside the core. Memory allocation, activity frequency, and token budgets will be determined through experiments.
 
 ## 仓库结构 / Repository layout
 
@@ -62,6 +62,7 @@ Yusheng/
 ├── Copolient.png  所有者提供的图片 / Owner-provided image
 └── prototype/
     ├── __init__.py
+    ├── main.py           命令行启动与会话编排 / CLI entry and session orchestration
     ├── Core/             运行核心 / Runtime core
     │   ├── __init__.py
     │   ├── paths.py          路径地址簿 / File locations
@@ -84,6 +85,34 @@ Real conversations, memory stores, credentials, and runtime data stay local and 
 以下示例从仓库根目录执行。现有环境已安装 `openai==3.41.0`；其他环境可按 `requirements.txt` 安装依赖。本次未安装或修改环境。
 
 Run the examples from the repository root. The existing environment has `openai==3.41.0`; other environments can install the dependencies from `requirements.txt`. This change did not install or modify the environment.
+
+### 命令行聊天 / Command-line chat
+
+先按下文「模型调用」说明在根目录配置本地 `.env`，然后从仓库根目录启动：
+
+Configure the local root `.env` as described under Model calls, then launch from the repository root:
+
+```powershell
+.\myvenv\Scripts\python.exe -m prototype.main
+```
+
+入口自动加载初始 Prompt，每次请求带上本次会话已完成的对话，成功后保留原始 assistant 消息。对话仅保存在当前进程内，不自动读写长期记忆或聊天文件；退出后不会恢复。每条普通输入是一行消息，空输入跳过。
+
+The entry loads the initial prompt, includes completed turns in each request, and preserves the original assistant message after success. History stays in the current process; no memory or conversation files are read or written automatically, and sessions do not resume after exit. Each nonempty input line sends one message.
+
+| 命令 / Command | 行为 / Behavior |
+| --- | --- |
+| `/exit` | 退出；Ctrl+C 或输入结束也可退出。 / Exit; Ctrl+C or end-of-input also exits. |
+| `/clear` | 重新读取初始 Prompt 并清空上下文；读取失败则保留原会话。 / Reload the prompt and clear context; a reload failure keeps the session intact. |
+| `/retry` | 手动重试最近一次失败输入。 / Manually retry the pending failed input. |
+
+请求失败时不把本轮加入已完成对话；直接输入新消息会替换失败输入。长度截断的回复会保留并显示提示；当前不执行工具调用。上下文暂不自动压缩或裁剪，过长时可用 `/clear` 开始新会话。
+
+Failed turns are not added to completed history; a new message replaces the pending failed input. Truncated replies are retained with a notice. Tools are not executed. Context is not automatically compressed or trimmed; use `/clear` to start fresh if it becomes too long.
+
+以下独立模块示例可在同一根目录启动 Python 后使用：
+
+For the standalone module examples below, start Python from the same root:
 
 ```powershell
 .\myvenv\Scripts\python.exe
@@ -160,18 +189,25 @@ Calling `call_model()` sends the supplied messages to DeepSeek and incurs API us
 ### 调用关系 / Call structure
 
 ```text
-调用方 / Future orchestration entry
+prototype.main.main
+├── ChatSession → reset → read_text_file(INITIAL_PROMPT_FILE)
+└── 输入循环 / Input loop → _handle_input
+    ├── /clear → reset
+    └── 普通输入或 /retry → reply → call_model → DeepSeek
+
+独立记忆调用方 / Standalone memory caller
 ├── read_memory(path) → read_json → read_text_file
 │                    → validate_memory
-├── write_memory(memory, path) → validate_memory → write_json
-└── call_model(messages) → _load_api_key → read_text_file
-                       → DeepSeek chat.completions.create
+└── write_memory(memory, path) → validate_memory → write_json
+
+call_model(messages) → _load_api_key → read_text_file
+                     → DeepSeek chat.completions.create
 
 Core/paths.py → 为各模块提供文件位置 / File locations for all modules
 ```
 
-记忆读写统一在 `prototype/Core/memory.py`，保留两个独立函数；它与模型调用模块互不导入。记忆不会自动送给模型，也不会从模型回复中自动提取；这些由后续入口编排。当前不提供工具注册和 Agent 循环。
+记忆读写统一在 `prototype/Core/memory.py`，保留两个独立函数；它与模型调用模块互不导入。当前入口只编排初始 Prompt 与模型调用，记忆不会自动送给模型，也不会从模型回复中自动提取。当前不提供工具注册和 Agent 循环。
 
-Memory reading and writing share `prototype/Core/memory.py` as two separate functions. The memory and model modules do not import one another. Memory is not automatically injected into prompts or extracted from responses; a future entry point will coordinate that behavior. Tool registration and an agent loop are outside this initial implementation.
+Memory reading and writing share `prototype/Core/memory.py` as two separate functions. The memory and model modules do not import one another. The current entry coordinates only the initial prompt and model calls; memory is not automatically injected into prompts or extracted from responses. Tool registration and an agent loop are outside this initial implementation.
 
 接口依据：[DeepSeek 首次调用](https://api-docs.deepseek.com/)、[思考模式开关](https://api-docs.deepseek.com/guides/thinking_mode/)、[Chat Completions 返回结构](https://api-docs.deepseek.com/api/create-chat-completion/)。
