@@ -14,15 +14,15 @@ EN:Exploring persistent memory, on-demand recall, and autonomous activities for 
 
 Yusheng is a personal AI companion project exploring persistent memory and everyday activities. It aims to help Dafeiyu recall past conversations, carry experiences into the next day, and choose activities within defined limits.
 
-最初的设想来自 CoMind 中的《给大肥鱼完整的一生》。项目从保存经历开始，逐步尝试近期缓存、长期记忆、整理压缩与按需检索。原始记录保留，回忆中的重新表达与原始事实分开。
+最初的设想来自 CoMind 中的[《给大肥鱼完整的一生》](https://github.com/aaf12329/CoMind/blob/main/02_%E6%80%9D%E8%80%83%E4%B8%8E%E5%86%99%E4%BD%9C/articles/%E7%BB%99%E5%A4%A7%E8%82%A5%E9%B1%BC%E5%AE%8C%E6%95%B4%E7%9A%84%E4%B8%80%E7%94%9F.html)。项目从保存经历开始，逐步尝试近期缓存、长期记忆、整理压缩与按需检索。原始记录保留，回忆中的重新表达与原始事实分开。
 
-The idea began with the essay “A Full Life for Dafeiyu” in CoMind. The project starts with recording experiences, then explores recent context, long-term memory, consolidation, and retrieval. Original records are preserved separately from reconstructed recollections.
+The idea began with the essay [“A Full Life for Dafeiyu”](https://github.com/aaf12329/CoMind/blob/main/02_%E6%80%9D%E8%80%83%E4%B8%8E%E5%86%99%E4%BD%9C/articles/%E7%BB%99%E5%A4%A7%E8%82%A5%E9%B1%BC%E5%AE%8C%E6%95%B4%E7%9A%84%E4%B8%80%E7%94%9F.html) in CoMind. The project starts with recording experiences, then explores recent context, long-term memory, consolidation, and retrieval. Original records are preserved separately from reconstructed recollections.
 
 ## 当前状态 / Current status
 
-**筹备阶段：仅完成本地仓库初始化，尚无可运行程序。** 技术栈、模型服务、存储方案与硬件配置尚未确定。
+**筹备阶段：已完成本地仓库初始化，原型使用 Python，尚无可运行程序。** Python 环境由所有者创建，具体版本与路径待确认；模型服务、存储方案与硬件配置尚未确定。
 
-**Planning stage: the local repository has been initialized; no runnable application exists yet.** The technology stack, model provider, storage, and hardware remain undecided.
+**Planning stage: the local repository has been initialized, and the prototype will use Python; no runnable application exists yet.** The owner is setting up the Python environment; its version and path are pending confirmation. The model provider, storage, and hardware remain undecided.
 
 ## 初步方向 / Initial direction
 
@@ -46,7 +46,7 @@ Core code is maintained by humans; the running companion does not modify it auto
 ```text
 Yusheng/
 ├── README.md      项目说明与进度 / Overview and status
-├── AGENTS.md      AI 接手入口 / Entry point for AI collaborators
+├── AGENTS.md      AI 接手与代码规范入口 / AI handover and coding-standard references
 └── .gitignore     本地数据与生成物忽略规则 / Local data and generated-file exclusions
 ```
 
