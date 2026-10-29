@@ -8,7 +8,8 @@
 - 当前阶段：Python 原型阶段，运行核心集中在 `prototype/Core/`，提示词与记忆目录位于其同级；已编写 JSON 记忆读写与 DeepSeek 调用模块，按当前指令未运行测试或真实 API 调用。
 - 原型语言与环境：Python 3.12.0，所有者创建的 venv；项目内解释器为 `myvenv/Scripts/python.exe`，已安装 `openai==3.41.0`。
 - 模型调用：`deepseek-flash`，关闭思考（`thinking.type="disabled"`），非流式（`stream=False`）。
-- 记忆存储：JSON，由所有者明确指定；默认文件为 `prototype/Memory/memories.json`。读写统一在 `prototype/Core/memory.py`，保留 `read_memory()` 与 `write_memory()` 两个独立函数，暂不实现并发写入。
+- 文件工具层：`prototype/Core/File_read_and_write.py`，提供 `Memory_json_write()`、`Memory_json_read()`、`file_read()`、`file_write()` 四个函数；后两者暂时只支持 `.md`，尚未注册给模型。
+- 记忆存储：JSON，由所有者明确指定；默认文件为 `prototype/Memory/memories.json`，暂不实现并发写入。Markdown 数据示例路径登记为 `prototype/Memory/notes.md`，写入时才创建。
 - 提示词：`prototype/PromptSQL/initial_prompt.md`，按社区大肥鱼二创特征编写；来源见 `prototype/PromptSQL/README.md`，由调用方读取后作为 system 消息传入。
 - 命令行入口：从仓库根目录执行 `myvenv/Scripts/python.exe -m prototype.main`；加载初始 Prompt，保留本次会话上下文，支持 `/exit`、`/clear` 与 `/retry`，不自动读写长期记忆或聊天文件。
 - 项目状态、调用方式与数据契约以 `README.md` 为准；命令行聊天入口已编写，尚未运行验证；自动检索和工具循环尚未实现。
@@ -37,7 +38,7 @@ CoMind 与本仓库在本机上是同级目录。协作标准只引用 CoMind �
 
 本项目按 Python 工程项目开展原型开发。写代码前从上表的编程规范入口进入，并读取 Python、工程架构及 LLM / Agent 专项标准；规则正文以对应文件为准。
 
-`prototype/Core/` 集中存放运行核心；`prototype/main.py` 是入口编排层，也属于运行内核。独立行动的大肥鱼不得自行修改这些文件及原型包加载代码。`prototype/Core/paths.py` 是文件位置的唯一地址簿；共用 I/O 与格式校验在 `prototype/Core/common.py`。记忆读写模块 `memory.py` 与模型调用模块 `core.py` 互不导入；当前入口只编排提示词和模型调用。实际密钥只写本地 `.env`；记忆文件及环境均被忽略。
+`prototype/Core/` 集中存放运行核心；`prototype/main.py` 是入口编排层，也属于运行内核。独立行动的大肥鱼不得自行修改这些文件及原型包加载代码。`prototype/Core/paths.py` 是文件位置的唯一地址簿；共用 I/O、工具路径检查与格式校验在 `prototype/Core/common.py`。文件工具层 `File_read_and_write.py` 与模型调用模块 `core.py` 互不导入；当前入口只编排提示词和模型调用。文件工具相对路径以项目根目录为基准，限制在项目内，排除凭据、Git、环境及依赖缓存，并禁止写入 Core。实际密钥只写本地 `.env`；记忆文件及环境均被忽略。
 
 ## 仓库卫生标准
 

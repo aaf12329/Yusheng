@@ -29,9 +29,9 @@ Yusheng's predecessor projects are **DeepSeek_port** and **My_Agent**, both avai
 
 ## 当前状态 / Current status
 
-**Python 原型阶段：运行核心集中在 `prototype/Core/`，提示词和记忆目录位于其同级。** 已编写 JSON 记忆读写、DeepSeek 调用模块和命令行聊天入口 `prototype/main.py`。使用所有者创建的 `myvenv`（Python 3.12.0），模型固定 `deepseek-flash`，关闭思考，非流式返回。按本次要求未运行测试、未进行真实 API 调用；聊天入口尚未运行验证，长期记忆接入、自动检索和工具执行仍待实现。
+**Python 原型阶段：运行核心集中在 `prototype/Core/`，提示词和记忆目录位于其同级。** 已编写 JSON 记忆与 Markdown 文件读写工具、DeepSeek 调用模块和命令行聊天入口 `prototype/main.py`。使用所有者创建的 `myvenv`（Python 3.12.0），模型固定 `deepseek-flash`，关闭思考，非流式返回。按本次要求未运行测试、未进行真实 API 调用；聊天入口尚未运行验证，长期记忆接入、自动检索和工具执行仍待实现。
 
-**Python prototype stage: the runtime core lives in `prototype/Core/`, alongside the prompt and memory directories.** JSON memory read/write, a DeepSeek adapter, and the command-line chat entry `prototype/main.py` have been written. The owner's `myvenv` uses Python 3.12.0. The adapter fixes the model to `deepseek-flash`, disables thinking, and returns non-streaming responses. No tests or live API calls were run, as requested. The chat entry has not been run; long-term memory integration, automatic retrieval, and tool execution remain unimplemented.
+**Python prototype stage: the runtime core lives in `prototype/Core/`, alongside the prompt and memory directories.** JSON memory and Markdown file tools, a DeepSeek adapter, and the command-line chat entry `prototype/main.py` have been written. The owner's `myvenv` uses Python 3.12.0. The adapter fixes the model to `deepseek-flash`, disables thinking, and returns non-streaming responses. No tests or live API calls were run, as requested. The chat entry has not been run; long-term memory integration, automatic retrieval, and tool execution remain unimplemented.
 
 ## 初步方向 / Initial direction
 
@@ -67,7 +67,7 @@ Yusheng/
     │   ├── __init__.py
     │   ├── paths.py          路径地址簿 / File locations
     │   ├── common.py         共用 JSON I/O 与格式校验 / Shared I/O and validation
-    │   ├── memory.py         记忆读写 / Memory reading and writing
+    │   ├── File_read_and_write.py  JSON 记忆与 Markdown 工具 / File tools
     │   └── core.py           DeepSeek 核心调用 / DeepSeek adapter
     ├── PromptSQL/
     │   ├── initial_prompt.md  大肥鱼初始提示词 / Initial persona prompt
@@ -134,18 +134,43 @@ Memory is a JSON object containing a list of entries. `version` is the integer `
 ```
 
 ```python
-from prototype.Core.memory import read_memory, write_memory
+from prototype.Core.File_read_and_write import Memory_json_read, Memory_json_write
 
-memory = read_memory()
+memory = Memory_json_read()
 next_id = max((item["id"] for item in memory["memories"]), default=0) + 1
 memory["memories"].append({"id": next_id, "content": "今天开始搭建原型。"})
-result = write_memory(memory)
+result = Memory_json_write(memory)
 print(result)  # {"path": 实际文件路径, "count": 当前条目数}
 ```
 
-`read_memory()` 读取完整文档；文件不存在时返回空文档，文件损坏或格式错误则报错。`write_memory()` 校验并覆盖保存完整文档，不自动追加；采用 UTF-8 写入，先写同目录临时文件，再替换目标。读改写流程暂按单写入者使用，不支持并发合并。聊天流水与记忆库保持分开。
+`Memory_json_read()` 读取完整文档；文件不存在时返回空文档，文件损坏或格式错误则报错。`Memory_json_write()` 校验并覆盖保存完整文档，不自动追加；采用 UTF-8 写入，先写同目录临时文件，再替换目标。读改写流程暂按单写入者使用，不支持并发合并。聊天流水与记忆库保持分开。
 
-`read_memory()` returns the complete document, or an empty document if no file exists; malformed data raises an error. `write_memory()` validates and replaces the complete snapshot using a same-directory temporary file and UTF-8 encoding. It does not append automatically or coordinate concurrent writers. Conversation logs remain separate from the memory store.
+`Memory_json_read()` returns the complete document, or an empty document if no file exists; malformed data raises an error. `Memory_json_write()` validates and replaces the complete snapshot using a same-directory temporary file and UTF-8 encoding. It does not append automatically or coordinate concurrent writers. Conversation logs remain separate from the memory store.
+
+### 文件工具层 / File tools
+
+`prototype/Core/File_read_and_write.py` 提供四个函数，当前由 Python 调用方显式使用，尚未接入模型的工具注册与执行循环。
+
+`prototype/Core/File_read_and_write.py` exposes four functions for explicit Python calls. Model tool registration and execution are not connected yet.
+
+| 函数 / Function | 返回 / Return |
+| --- | --- |
+| `Memory_json_write(memory, path=MEMORY_FILE)` | 校验并覆盖 JSON 记忆，返回 `{"path": str, "count": int}`。 / Validate and replace JSON memory. |
+| `Memory_json_read(path=MEMORY_FILE)` | 返回记忆文档，缺失时返回空库。 / Return the memory document, or an empty store if missing. |
+| `file_read(path)` | 读取 `.md` 正文，返回字符串，缺失则报错。 / Read Markdown text; missing files raise an error. |
+| `file_write(path, content)` | UTF-8 完整覆盖 `.md`，返回 `{"path": str, "characters": int}`。 / Replace Markdown text using UTF-8. |
+
+```python
+from prototype.Core.File_read_and_write import file_read, file_write
+from prototype.Core.paths import MARKDOWN_FILE
+
+result = file_write(MARKDOWN_FILE, "# 随手记\n\n今天开始搭建鱼生。\n")
+text = file_read(MARKDOWN_FILE)
+```
+
+`MARKDOWN_FILE` 指向 `prototype/Memory/notes.md`，写入时才创建，沿用 Memory 目录的忽略规则。Markdown 不做语法解析，空字符串可用于清空文件，父目录按需创建，不自动追加换行。JSON 工具仅接受 `.json`；Markdown 工具仅接受 `.md`。路径可传字符串或 `Path`，相对路径以项目根目录为基准；解析后必须位于项目内，排除 `.env` 凭据、Git、环境及依赖缓存目录，写入还禁止进入 `Core`。这些文件检查不能代替后续完整的工具权限隔离。
+
+`MARKDOWN_FILE` points to `prototype/Memory/notes.md`, created on write and ignored with other memory data. Markdown is plain text: empty content clears the file, parent directories are created as needed, and no newline is added automatically. JSON tools accept only `.json`; text tools accept only `.md`. Paths accept strings or `Path` objects, with relative paths based on the project root. Resolved paths must stay inside the project, excluding `.env` credentials, Git, environments, and dependency caches. Writes into `Core` are blocked. These file checks do not replace full tool permission isolation.
 
 ### 模型调用 / Model calls
 
@@ -195,10 +220,13 @@ prototype.main.main
     ├── /clear → reset
     └── 普通输入或 /retry → reply → call_model → DeepSeek
 
-独立记忆调用方 / Standalone memory caller
-├── read_memory(path) → read_json → read_text_file
-│                    → validate_memory
-└── write_memory(memory, path) → validate_memory → write_json
+文件工具调用方 / File tool caller
+├── Memory_json_write(memory, path) → resolve_tool_path → validate_memory
+│                                                       → write_json → write_text_file
+├── Memory_json_read(path) → resolve_tool_path → read_json → read_text_file
+│                                            → validate_memory
+├── file_read(path) → resolve_tool_path → read_text_file
+└── file_write(path, content) → resolve_tool_path → write_text_file
 
 call_model(messages) → _load_api_key → read_text_file
                      → DeepSeek chat.completions.create
@@ -206,8 +234,8 @@ call_model(messages) → _load_api_key → read_text_file
 Core/paths.py → 为各模块提供文件位置 / File locations for all modules
 ```
 
-记忆读写统一在 `prototype/Core/memory.py`，保留两个独立函数；它与模型调用模块互不导入。当前入口只编排初始 Prompt 与模型调用，记忆不会自动送给模型，也不会从模型回复中自动提取。当前不提供工具注册和 Agent 循环。
+文件工具统一在 `prototype/Core/File_read_and_write.py`，它与模型调用模块互不导入；底层 JSON 与文本 I/O、路径检查集中在共用层。当前入口只编排初始 Prompt 与模型调用，记忆不会自动送给模型，也不会从模型回复中自动提取。当前不提供工具注册和 Agent 循环。
 
-Memory reading and writing share `prototype/Core/memory.py` as two separate functions. The memory and model modules do not import one another. The current entry coordinates only the initial prompt and model calls; memory is not automatically injected into prompts or extracted from responses. Tool registration and an agent loop are outside this initial implementation.
+File tools live in `prototype/Core/File_read_and_write.py` and do not import the model module. Shared helpers handle JSON/text I/O and path checks. The current entry coordinates only the initial prompt and model calls; memory is not automatically injected into prompts or extracted from responses. Tool registration and an agent loop are outside this initial implementation.
 
 接口依据：[DeepSeek 首次调用](https://api-docs.deepseek.com/)、[思考模式开关](https://api-docs.deepseek.com/guides/thinking_mode/)、[Chat Completions 返回结构](https://api-docs.deepseek.com/api/create-chat-completion/)。

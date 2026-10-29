@@ -1,10 +1,12 @@
 """运行核心的共用层：文件 I/O 与记忆格式校验，不调用功能模块。
 
 函数结构与调用关系：
-├─ read_text_file(path) ← read_json、core._load_api_key
-├─ read_json(path) → read_text_file ← memory.read_memory
-├─ write_json(path, data) ← memory.write_memory
-└─ validate_memory(data) ← memory.read_memory、memory.write_memory
+├─ resolve_tool_path(path, suffix, writable) ← 文件工具层的四个函数
+├─ read_text_file(path) ← read_json、file_read、core._load_api_key、入口提示词加载
+├─ write_text_file(path, text) ← write_json、file_write
+├─ read_json(path) → read_text_file ← Memory_json_read
+├─ write_json(path, data) → write_text_file ← Memory_json_write
+└─ validate_memory(data) ← Memory_json_read、Memory_json_write
 数据流：文件字节 ↔ JSON 对象 → 校验后的记忆文档。
 契约：记忆为 {"version": 1, "memories": [{"id": 正整数, "content": 非空文本}]}。
 校验返回原文档；不修改输入，允许保留额外的 JSON 字段。
@@ -15,6 +17,27 @@ import os
 import tempfile
 from pathlib import Path
 from typing import Any
+
+from prototype.Core.paths import CORE_ROOT, PROJECT_ROOT, TOOL_EXCLUDED_DIRS
+
+
+def resolve_tool_path(path: Path | str, suffix: str, writable: bool = False) -> Path:
+    """解析工具路径并检查后缀、项目范围及内核写入限制；供文件工具层调用。"""
+    path = Path(path)
+    if not path.is_absolute():
+        path = PROJECT_ROOT / path
+    path = path.resolve()
+    if not path.is_relative_to(PROJECT_ROOT):
+        raise ValueError("文件工具仅允许访问项目目录内的文件；请使用项目内路径。")
+    if any(path.is_relative_to(directory) for directory in TOOL_EXCLUDED_DIRS):
+        raise ValueError("文件工具不能访问 Git、环境或依赖缓存目录；请使用项目数据目录。")
+    if path.suffix.lower() != suffix:
+        raise ValueError(f"此工具仅支持 {suffix} 文件；请检查文件后缀。")
+    if any(part.lower().startswith(".env") for part in path.relative_to(PROJECT_ROOT).parts):
+        raise ValueError("文件工具不能访问 .env 凭据文件或目录。")
+    if writable and path.is_relative_to(CORE_ROOT):
+        raise ValueError("文件工具不能写入运行内核 Core；请将数据放在 prototype/Memory 中。")
+    return path
 
 
 def read_text_file(path: Path) -> str:
@@ -27,7 +50,7 @@ def read_text_file(path: Path) -> str:
 
 
 def read_json(path: Path) -> Any:
-    """解析本地 JSON；由 read_memory 调用，损坏文件明确报错而不当作空库。"""
+    """解析本地 JSON；由 Memory_json_read 调用，损坏文件明确报错而不当作空库。"""
     try:
         return json.loads(read_text_file(path))
     except (json.JSONDecodeError, UnicodeError) as exc:
@@ -35,8 +58,13 @@ def read_json(path: Path) -> Any:
 
 
 def write_json(path: Path, data: Any) -> None:
-    """先完整序列化，再原子替换文件；由 write_memory 调用，失败保留原文件。"""
+    """完整序列化 JSON 后交给共用文本写入口；由 Memory_json_write 调用。"""
     text = json.dumps(data, ensure_ascii=False, indent=2, allow_nan=False) + "\n"
+    write_text_file(path, text)
+
+
+def write_text_file(path: Path, text: str) -> None:
+    """UTF-8 原子覆盖文本；由 write_json 和 file_write 调用，失败保留原文件。"""
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary_path = None
     try:
