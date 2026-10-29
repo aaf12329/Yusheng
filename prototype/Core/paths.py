@@ -2,7 +2,7 @@
 
 结构：CORE_ROOT → PROTOTYPE_ROOT → PROJECT_ROOT → ENV_FILE；
       PROTOTYPE_ROOT → INITIAL_PROMPT_FILE / MEMORY_DIR → MEMORY_FILE。
-调用：common、memory_read、memory_write、core 只读取这些常量。
+调用：memory、core 及外部入口只读取这些常量。
 数据流：模块位置 → 项目根目录 → 各本地文件位置。
 """
 

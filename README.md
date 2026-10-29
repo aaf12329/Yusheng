@@ -66,8 +66,7 @@ Yusheng/
     │   ├── __init__.py
     │   ├── paths.py          路径地址簿 / File locations
     │   ├── common.py         共用 JSON I/O 与格式校验 / Shared I/O and validation
-    │   ├── memory_read.py    记忆读取 / Memory reading
-    │   ├── memory_write.py   记忆写入 / Memory writing
+    │   ├── memory.py         记忆读写 / Memory reading and writing
     │   └── core.py           DeepSeek 核心调用 / DeepSeek adapter
     ├── PromptSQL/
     │   ├── initial_prompt.md  大肥鱼初始提示词 / Initial persona prompt
@@ -106,8 +105,7 @@ Memory is a JSON object containing a list of entries. `version` is the integer `
 ```
 
 ```python
-from prototype.Core.memory_read import read_memory
-from prototype.Core.memory_write import write_memory
+from prototype.Core.memory import read_memory, write_memory
 
 memory = read_memory()
 next_id = max((item["id"] for item in memory["memories"]), default=0) + 1
@@ -172,8 +170,8 @@ Calling `call_model()` sends the supplied messages to DeepSeek and incurs API us
 Core/paths.py → 为各模块提供文件位置 / File locations for all modules
 ```
 
-读、写、模型三个功能模块互不导入。记忆不会自动送给模型，也不会从模型回复中自动提取；这些由后续入口编排。当前不提供工具注册和 Agent 循环。
+记忆读写统一在 `prototype/Core/memory.py`，保留两个独立函数；它与模型调用模块互不导入。记忆不会自动送给模型，也不会从模型回复中自动提取；这些由后续入口编排。当前不提供工具注册和 Agent 循环。
 
-The three functional modules do not import one another. Memory is not automatically injected into prompts or extracted from responses; a future entry point will coordinate that behavior. Tool registration and an agent loop are outside this initial implementation.
+Memory reading and writing share `prototype/Core/memory.py` as two separate functions. The memory and model modules do not import one another. Memory is not automatically injected into prompts or extracted from responses; a future entry point will coordinate that behavior. Tool registration and an agent loop are outside this initial implementation.
 
 接口依据：[DeepSeek 首次调用](https://api-docs.deepseek.com/)、[思考模式开关](https://api-docs.deepseek.com/guides/thinking_mode/)、[Chat Completions 返回结构](https://api-docs.deepseek.com/api/create-chat-completion/)。

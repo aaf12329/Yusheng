@@ -8,7 +8,7 @@
 - 当前阶段：Python 原型阶段，运行核心集中在 `prototype/Core/`，提示词与记忆目录位于其同级；已编写 JSON 记忆读写与 DeepSeek 调用模块，按当前指令未运行测试或真实 API 调用。
 - 原型语言与环境：Python 3.12.0，所有者创建的 venv；项目内解释器为 `myvenv/Scripts/python.exe`，已安装 `openai==3.41.0`。
 - 模型调用：`deepseek-flash`，关闭思考（`thinking.type="disabled"`），非流式（`stream=False`）。
-- 记忆存储：JSON，由所有者明确指定；默认文件为 `prototype/Memory/memories.json`。读写函数分开，暂不实现并发写入。
+- 记忆存储：JSON，由所有者明确指定；默认文件为 `prototype/Memory/memories.json`。读写统一在 `prototype/Core/memory.py`，保留 `read_memory()` 与 `write_memory()` 两个独立函数，暂不实现并发写入。
 - 提示词：`prototype/PromptSQL/initial_prompt.md`，按社区大肥鱼二创特征编写；来源见 `prototype/PromptSQL/README.md`，由调用方读取后作为 system 消息传入。
 - 项目状态、调用方式与数据契约以 `README.md` 为准；入口编排、自动检索和工具循环尚未实现。
 - 初始化日期：2026-10-29。
@@ -36,7 +36,7 @@ CoMind 与本仓库在本机上是同级目录。协作标准只引用 CoMind �
 
 本项目按 Python 工程项目开展原型开发。写代码前从上表的编程规范入口进入，并读取 Python、工程架构及 LLM / Agent 专项标准；规则正文以对应文件为准。
 
-`prototype/Core/` 集中存放运行核心，独立行动的大肥鱼不得自行修改该目录及原型包加载代码。`prototype/Core/paths.py` 是文件位置的唯一地址簿；共用 I/O 与格式校验在 `prototype/Core/common.py`。三个功能模块互不导入，协作由后续入口编排。实际密钥只写本地 `.env`；记忆文件及环境均被忽略。
+`prototype/Core/` 集中存放运行核心，独立行动的大肥鱼不得自行修改该目录及原型包加载代码。`prototype/Core/paths.py` 是文件位置的唯一地址簿；共用 I/O 与格式校验在 `prototype/Core/common.py`。记忆读写模块 `memory.py` 与模型调用模块 `core.py` 互不导入，协作由后续入口编排。实际密钥只写本地 `.env`；记忆文件及环境均被忽略。
 
 ## 仓库卫生标准
 

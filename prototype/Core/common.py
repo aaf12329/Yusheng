@@ -2,9 +2,9 @@
 
 函数结构与调用关系：
 ├─ read_text_file(path) ← read_json、core._load_api_key
-├─ read_json(path) → read_text_file ← memory_read.read_memory
-├─ write_json(path, data) ← memory_write.write_memory
-└─ validate_memory(data) ← memory_read.read_memory、memory_write.write_memory
+├─ read_json(path) → read_text_file ← memory.read_memory
+├─ write_json(path, data) ← memory.write_memory
+└─ validate_memory(data) ← memory.read_memory、memory.write_memory
 数据流：文件字节 ↔ JSON 对象 → 校验后的记忆文档。
 契约：记忆为 {"version": 1, "memories": [{"id": 正整数, "content": 非空文本}]}。
 校验返回原文档；不修改输入，允许保留额外的 JSON 字段。
