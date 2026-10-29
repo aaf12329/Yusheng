@@ -1,7 +1,7 @@
 """DeepSeek 模型调用模块，不读取记忆，也不执行工具。
 
 函数结构与调用关系：
-├─ _load_api_key() → common.read_text_file；由 call_model 调用
+├─ _load_api_key() → ENV_FILE.read_text；由 call_model 调用，仅读取本地密钥配置
 └─ call_model(messages) → _load_api_key → OpenAI.chat.completions.create
 数据流：messages → 固定 Flash/关闭思考/非流式请求 → 统一返回字典。
 返回契约：content: str，reasoning: str，usage: dict | None，tool_calls: list，
@@ -13,18 +13,19 @@ from typing import Any
 
 from openai import APIConnectionError, APIStatusError, APITimeoutError, OpenAI
 
-from prototype.Core.common import read_text_file
 from prototype.Core.paths import ENV_FILE
 
 
 MODEL = "deepseek-flash"
 BASE_URL = "https://api.deepseek.com"
+THINKING_TYPE = "disabled"
+TIMEOUT = 60.0
 
 
 def _load_api_key() -> str:
     """从根目录 .env 读取单行 DEEPSEEK_API_KEY；仅由 call_model 调用。"""
     try:
-        text = read_text_file(ENV_FILE)
+        text = ENV_FILE.read_text(encoding="utf-8-sig")
     except FileNotFoundError:
         raise RuntimeError("请将根目录 .env.example 复制为 .env，并填写 DEEPSEEK_API_KEY。") from None
     for line in text.splitlines():
@@ -49,13 +50,13 @@ def call_model(messages: list[dict[str, Any]]) -> dict[str, Any]:
     try:
         with OpenAI(
             api_key=_load_api_key(), base_url=BASE_URL,
-            timeout=60.0, max_retries=0,
+            timeout=TIMEOUT, max_retries=0,
         ) as client:
             response = client.chat.completions.create(
                 model=MODEL,
                 messages=messages,
                 stream=False,
-                extra_body={"thinking": {"type": "disabled"}},
+                extra_body={"thinking": {"type": THINKING_TYPE}},
             )
     except APITimeoutError:
         raise RuntimeError("DeepSeek 请求超时；请检查网络后按需重试。") from None

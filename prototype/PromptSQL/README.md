@@ -23,6 +23,6 @@ Only the contents of `initial_prompt.md` should be sent as the system prompt. So
 
 ## 项目内自主扩展约定 / Project-specific autonomy
 
-`initial_prompt.md` 的「自主工具与运行内核」一节来自所有者于 2026-10-29 的明确指示，定义自主编写工具与独立行动的内核边界，不属于引用的社区角色设定。当前原型尚未实现工具执行、权限隔离或内核写入保护；提示词约定不等于这些机制已经实现。
+`initial_prompt.md` 的「自主工具与运行内核」一节来自所有者于 2026-10-29 的明确指示，定义自主编写工具与独立行动的内核边界，不属于引用的社区角色设定。当前原型已有 `Tools_protect.py` 的路径保护名单检查，由命令行入口在文件操作前调用；模型工具执行与进程权限隔离尚未接入，提示词约定和路径检查不能代替完整的运行隔离。
 
-The autonomy section follows the owner's explicit instruction on 2026-10-29 and is specific to Yusheng. Tool execution, permission isolation, and runtime write protection are not implemented yet; the prompt states the intended behavior rather than enforcing it in code.
+The autonomy section follows the owner's explicit instruction on 2026-10-29 and is specific to Yusheng. The command-line entry now checks protected paths through Tools_protect.py before file operations. Model tool execution and process permission isolation are not connected yet; prompt rules and path checks do not provide full runtime isolation.

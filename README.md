@@ -29,213 +29,157 @@ Yusheng's predecessor projects are **DeepSeek_port** and **My_Agent**, both avai
 
 ## 当前状态 / Current status
 
-**Python 原型阶段：运行核心集中在 `prototype/Core/`，提示词和记忆目录位于其同级。** 已编写 JSON 记忆与 Markdown 文件读写工具、DeepSeek 调用模块和命令行聊天入口 `prototype/main.py`。使用所有者创建的 `myvenv`（Python 3.12.0），模型固定 `deepseek-flash`，关闭思考，非流式返回。按本次要求未运行测试、未进行真实 API 调用；聊天入口尚未运行验证，长期记忆接入、自动检索和工具执行仍待实现。
+**Python 原型阶段。** 已编写命令行聊天、JSON 聊天记忆持久化、Markdown Prompt 读写、路径保护和 DeepSeek 调用。当前模型为 `deepseek-flash`，关闭思考，非流式返回；使用所有者创建的 Python 3.12.0 环境及 `openai==3.41.0`。按要求未运行测试、程序或真实 API 调用，运行效果尚未验证。
 
-**Python prototype stage: the runtime core lives in `prototype/Core/`, alongside the prompt and memory directories.** JSON memory and Markdown file tools, a DeepSeek adapter, and the command-line chat entry `prototype/main.py` have been written. The owner's `myvenv` uses Python 3.12.0. The adapter fixes the model to `deepseek-flash`, disables thinking, and returns non-streaming responses. No tests or live API calls were run, as requested. The chat entry has not been run; long-term memory integration, automatic retrieval, and tool execution remain unimplemented.
+**Python prototype stage.** Command-line chat, persistent JSON conversation memory, Markdown prompt I/O, path protection, and DeepSeek calls have been written. Defaults use `deepseek-flash` with thinking disabled and non-streaming output. The owner's environment uses Python 3.12.0 and `openai==3.41.0`. No tests, program execution, or live API calls were performed as requested; runtime behavior remains unverified.
 
-## 初步方向 / Initial direction
+当前“记忆”先用于恢复完整聊天。长期事实记忆、压缩检索、自主活动及模型工具注册与执行循环仍待实现。
 
-以下是后续方向；当前已编写基础模块和命令行聊天流程，完整记忆与自主活动流程仍待实现和验证。
-
-The following items describe future work. Basic modules and a command-line chat flow have been written; the full memory and autonomous-activity workflow remains to be implemented and validated.
-
-| 方向 / Area | 目标 / Goal |
-| --- | --- |
-| 经历记录 / Experience recording | 保存对话与活动，重启后仍可读取。 / Persist conversations and activities across restarts. |
-| 缓存与记忆 / Context and memory | 区分近期经历与长期记忆，探索整理和压缩方式。 / Separate recent experiences from long-term memory and explore consolidation. |
-| 按需回忆 / On-demand recall | 在上下文预算内检索相关记忆，并能追溯原始记录。 / Retrieve relevant memories within a context budget while retaining source traceability. |
-| 自主活动 / Autonomous activities | 逐步接入扩展，明确活动权限、资源预算与停止机制。 / Introduce extensions with explicit permissions, resource budgets, and stop controls. |
-
-运行核心模块统一放在 `prototype/Core/`，启动入口为 `prototype/main.py`，均由人维护；运行中的大肥鱼不自行修改这些文件及模块加载代码，自写工具作为独立扩展。记忆注入比例、活动频率和 token 预算均需通过实际运行确定。
-
-Runtime modules in `prototype/Core/` and the startup entry `prototype/main.py` are maintained by humans; the running companion does not modify them or module-loading code autonomously. Self-written tools belong outside the core. Memory allocation, activity frequency, and token budgets will be determined through experiments.
+Memory currently restores full conversations. Long-term factual memory, compression/retrieval, autonomous activities, and model tool registration/execution remain future work.
 
 ## 仓库结构 / Repository layout
 
 ```text
 Yusheng/
-├── README.md      项目说明与进度 / Overview and status
-├── AGENTS.md      AI 接手与代码规范入口 / AI handover and coding-standard references
-├── .gitignore     本地数据与生成物忽略规则 / Local data and generated-file exclusions
-├── .env.example   本地密钥文件模板 / Local credential template
+├── README.md
+├── AGENTS.md
+├── .gitignore
+├── .env.example
 ├── requirements.txt
-├── Copolient.png  所有者提供的图片 / Owner-provided image
+├── Copolient.png
 └── prototype/
     ├── __init__.py
-    ├── main.py           命令行启动与会话编排 / CLI entry and session orchestration
-    ├── Core/             运行核心 / Runtime core
-    │   ├── __init__.py
-    │   ├── paths.py          路径地址簿 / File locations
-    │   ├── common.py         共用 JSON I/O 与格式校验 / Shared I/O and validation
-    │   ├── File_read_and_write.py  JSON 记忆与 Markdown 工具 / File tools
-    │   └── core.py           DeepSeek 核心调用 / DeepSeek adapter
+    ├── main.py                    对话循环 / Conversation orchestration
     ├── PromptSQL/
-    │   ├── initial_prompt.md  大肥鱼初始提示词 / Initial persona prompt
-    │   └── README.md          提示词用途与社区参考 / Usage and community references
-    └── Memory/
-        └── .gitkeep           保留目录，实际记忆忽略 / Tracked placeholder only
+    │   ├── initial_prompt.md      初始 Prompt / Initial prompt
+    │   └── README.md              用途与参考 / Usage and sources
+    ├── Memory/
+    │   └── .gitkeep               实际数据忽略 / Runtime data ignored
+    └── Core/
+        ├── __init__.py
+        ├── File_read_and_write.py JSON 记忆与 Markdown Prompt 读写 / File I/O
+        ├── Tools_protect.py       路径保护名单检查 / Protected-path checks
+        ├── core.py                模型调用核 / Model adapter
+        ├── paths.py               路径与保护名单 / Paths and protected lists
+        └── common.py              保留，不调用 / Retained, currently unused
 ```
 
-真实聊天记录、记忆库、凭据和运行数据存放在本地，不提交到仓库。`prototype/Memory/memories.json` 首次写入时才创建；`prototype/Memory/` 仅跟踪占位文件。不会在导入模块时创建文件或发起网络请求。
+`Core/`、启动入口及包加载代码由人维护，运行中的大肥鱼不得自主修改。独立扩展放在内核之外。真实聊天记录、记忆、凭据和运行数据仅存本地，不提交到 Git；导入模块不会创建数据文件或请求模型。
 
-Real conversations, memory stores, credentials, and runtime data stay local and are excluded from version control. `prototype/Memory/memories.json` is created on the first write; only the directory placeholder is tracked. Importing modules does not create files or make network requests.
+The core, startup entry, and package-loading code are maintained by humans and are not modified autonomously by the companion. Extensions belong outside the core. Conversations, memories, credentials, and runtime data stay local and are excluded from Git. Importing modules does not create data files or call the model.
 
-## 原型用法 / Prototype usage
+## 启动 / Run
 
-以下示例从仓库根目录执行。现有环境已安装 `openai==3.41.0`；其他环境可按 `requirements.txt` 安装依赖。本次未安装或修改环境。
+从仓库根目录执行。仅在没有 `.env` 时，将 `.env.example` 复制为 `.env`，填写 `DEEPSEEK_API_KEY`，不要提交密钥。现有环境无需本次安装；其他环境可按 `requirements.txt` 安装依赖。
 
-Run the examples from the repository root. The existing environment has `openai==3.41.0`; other environments can install the dependencies from `requirements.txt`. This change did not install or modify the environment.
-
-### 命令行聊天 / Command-line chat
-
-先按下文「模型调用」说明在根目录配置本地 `.env`，然后从仓库根目录启动：
-
-Configure the local root `.env` as described under Model calls, then launch from the repository root:
+Run from the repository root. If `.env` does not exist, copy `.env.example` to `.env` and fill in `DEEPSEEK_API_KEY`. Never commit credentials. The existing environment needs no installation for this change; other environments can install from `requirements.txt`.
 
 ```powershell
 .\myvenv\Scripts\python.exe -m prototype.main
 ```
 
-入口自动加载初始 Prompt，每次请求带上本次会话已完成的对话，成功后保留原始 assistant 消息。对话仅保存在当前进程内，不自动读写长期记忆或聊天文件；退出后不会恢复。每条普通输入是一行消息，空输入跳过。
+每轮执行：读取记忆 → 读取 Prompt → 获取输入 → 调用 core → 打印回复 → 写入记忆。请求包含当前 Prompt、已保存历史和本轮 user 消息，成功后保存原始 assistant 消息。重新启动会恢复历史，修改 Prompt 在下一轮读取时生效；system Prompt 不写入聊天记忆。
 
-The entry loads the initial prompt, includes completed turns in each request, and preserves the original assistant message after success. History stays in the current process; no memory or conversation files are read or written automatically, and sessions do not resume after exit. Each nonempty input line sends one message.
+Each turn reads memory and the prompt, accepts input, calls the model, prints the reply, and saves memory. Requests include the current prompt, saved history, and new input. Successful turns preserve the original assistant message. Restarts restore history, and prompt edits take effect on the next read. The system prompt is not stored in conversation memory.
 
-| 命令 / Command | 行为 / Behavior |
-| --- | --- |
-| `/exit` | 退出；Ctrl+C 或输入结束也可退出。 / Exit; Ctrl+C or end-of-input also exits. |
-| `/clear` | 重新读取初始 Prompt 并清空上下文；读取失败则保留原会话。 / Reload the prompt and clear context; a reload failure keeps the session intact. |
-| `/retry` | 手动重试最近一次失败输入。 / Manually retry the pending failed input. |
+- `/exit`、Ctrl+C 或输入结束可退出；空输入跳过。 / Exit with `/exit`, Ctrl+C, or end-of-input; empty input is skipped.
+- 请求失败不保存本轮，可以重新输入；不自动重试模型请求。 / Failed requests are not saved; enter the message again to retry.
+- 保存失败时暂停对话，`/retry` 只重试写入；`/exit` 放弃未保存的本轮并退出。 / If saving fails, `/retry` retries only the write; `/exit` leaves the turn unsaved and exits.
+- 长度截断的文本回复提示并保存；上下文暂不压缩或裁剪，按单进程、单写入者使用。 / Truncated text replies are retained with a notice. Context is not compressed or trimmed; use a single process/writer.
 
-请求失败时不把本轮加入已完成对话；直接输入新消息会替换失败输入。长度截断的回复会保留并显示提示；当前不执行工具调用。上下文暂不自动压缩或裁剪，过长时可用 `/clear` 开始新会话。
+## 文件格式与读写 / File format and I/O
 
-Failed turns are not added to completed history; a new message replaces the pending failed input. Truncated replies are retained with a notice. Tools are not executed. Context is not automatically compressed or trimmed; use `/clear` to start fresh if it becomes too long.
+默认聊天记忆为 `prototype/Memory/conversation.json`，首次成功写入时创建。旧 `memories.json` 保留原样，当前入口不读取、转换或覆盖它；聊天记录与后续长期事实记忆分开。
 
-以下独立模块示例可在同一根目录启动 Python 后使用：
-
-For the standalone module examples below, start Python from the same root:
-
-```powershell
-.\myvenv\Scripts\python.exe
-```
-
-### 记忆格式与读写 / Memory format and I/O
-
-记忆采用一个 JSON 文档，顶层为对象，`memories` 为条目列表。`version` 固定为整数 `1`；条目 `id` 为唯一正整数，从 `1` 开始；`content` 为非空字符串。可以添加其他 JSON 字段，读写时保留。
-
-Memory is a JSON object containing a list of entries. `version` is the integer `1`; each entry has a unique positive integer `id` and a nonempty string `content`. Additional JSON fields are preserved.
+The conversation store is `prototype/Memory/conversation.json`, created on the first successful save. The old `memories.json` is left untouched and is not loaded or converted. Conversation records remain separate from future long-term factual memory.
 
 ```json
 {
   "version": 1,
-  "memories": [
-    {"id": 1, "content": "今天开始搭建鱼生的 Python 原型。"}
+  "messages": [
+    {"role": "user", "content": "你好！"},
+    {"role": "assistant", "content": "你好，我是大肥鱼。"}
   ]
 }
 ```
 
-```python
-from prototype.Core.File_read_and_write import Memory_json_read, Memory_json_write
+`version` 必须为整数 `1`；`messages` 保存按顺序交替的完整 user/assistant 消息对，每条正文为非空字符串，保留原始 assistant 的额外字段。当前只支持文本聊天，不接受未处理的工具调用记录；格式错误报错，不当作空库覆盖。
 
-memory = Memory_json_read()
-next_id = max((item["id"] for item in memory["memories"]), default=0) + 1
-memory["memories"].append({"id": next_id, "content": "今天开始搭建原型。"})
-result = Memory_json_write(memory)
-print(result)  # {"path": 实际文件路径, "count": 当前条目数}
-```
+`version` is the integer `1`. `messages` contains complete alternating user/assistant pairs with nonempty text, preserving extra assistant fields. Only text chat is supported; unresolved tool calls and malformed history raise errors rather than becoming an empty store.
 
-`Memory_json_read()` 读取完整文档；文件不存在时返回空文档，文件损坏或格式错误则报错。`Memory_json_write()` 校验并覆盖保存完整文档，不自动追加；采用 UTF-8 写入，先写同目录临时文件，再替换目标。读改写流程暂按单写入者使用，不支持并发合并。聊天流水与记忆库保持分开。
-
-`Memory_json_read()` returns the complete document, or an empty document if no file exists; malformed data raises an error. `Memory_json_write()` validates and replaces the complete snapshot using a same-directory temporary file and UTF-8 encoding. It does not append automatically or coordinate concurrent writers. Conversation logs remain separate from the memory store.
-
-### 文件工具层 / File tools
-
-`prototype/Core/File_read_and_write.py` 提供四个函数，当前由 Python 调用方显式使用，尚未接入模型的工具注册与执行循环。
-
-`prototype/Core/File_read_and_write.py` exposes four functions for explicit Python calls. Model tool registration and execution are not connected yet.
-
-| 函数 / Function | 返回 / Return |
+| 函数 / Function | 行为与返回 / Behavior and return |
 | --- | --- |
-| `Memory_json_write(memory, path=MEMORY_FILE)` | 校验并覆盖 JSON 记忆，返回 `{"path": str, "count": int}`。 / Validate and replace JSON memory. |
-| `Memory_json_read(path=MEMORY_FILE)` | 返回记忆文档，缺失时返回空库。 / Return the memory document, or an empty store if missing. |
-| `file_read(path)` | 读取 `.md` 正文，返回字符串，缺失则报错。 / Read Markdown text; missing files raise an error. |
-| `file_write(path, content)` | UTF-8 完整覆盖 `.md`，返回 `{"path": str, "characters": int}`。 / Replace Markdown text using UTF-8. |
+| `Memory_json_read(path=MEMORY_FILE)` | 读取记忆，缺失返回 `{"version": 1, "messages": []}`。 / Read memory, or an empty store if missing. |
+| `Memory_json_write(memory, path=MEMORY_FILE)` | 校验并覆盖 JSON，返回 `{"path": str, "count": 消息数}`。 / Validate and replace JSON; count is the number of messages. |
+| `file_read(path)` | 读取 `.md` 正文，返回 `str`；缺失报错。 / Read Markdown text; missing files raise an error. |
+| `file_write(path, content)` | 覆盖 `.md`，返回 `{"path": str, "characters": int}`。 / Replace Markdown text and return its character count. |
+
+实际 I/O 集中在 `File_read_and_write.py` 的私有辅助函数中，JSON 和 Markdown 共用文本读取与原子写入。读取兼容 UTF-8/BOM 和 GB18030；写入使用 UTF-8、同目录临时文件和原子替换，按需创建父目录，不自动合并或处理并发。Markdown 不额外解析，不自动追加换行。
+
+Actual I/O lives in private helpers in `File_read_and_write.py`. JSON and Markdown share reading and atomic writes. Reading supports UTF-8/BOM and GB18030. Writes use UTF-8 and a same-directory temporary file, creating parent directories as needed without merging or concurrency coordination. Markdown is plain text, with no automatic newline.
+
+## 路径保护 / Path protection
+
+`Tools_protect.check_tool_path(path, operation)` 只检查路径，返回 `{"allowed": bool, "path": str, "reason": str}`。相对路径以项目根目录为基准；解析真实路径后检查范围和保护名单，解析失败时 `path` 为空。
+
+`Tools_protect.check_tool_path(path, operation)` returns an allow/deny result with a resolved path and reason. Relative paths use the project root. The check resolves the path before enforcing boundaries and protected lists; an unresolvable path is returned as an empty string.
+
+保护名单集中在 `paths.py`：Core、启动入口、包加载代码、Git、环境和依赖缓存禁止工具读写，`.env` 凭据同样禁止访问。当前入口在读取与保存前调用检查；后续 LLM 文件工具入口必须先检查，再把通过的真实绝对路径交给读写函数。
+
+Protected lists live in `paths.py`: the core, startup/package-loading code, Git, environments, dependency caches, and `.env` credentials are unavailable to file tools. The entry checks before reading or saving. Future LLM file-tool dispatch must also check first, then pass the approved absolute path to the I/O function.
+
+四个读写函数只负责类型、格式和 I/O，不自行调用保护模块。以下展示先检查、再读取的入口编排；写入时使用 `"write"` 检查。`MARKDOWN_FILE` 是忽略目录下可选的 `Memory/notes.md` 示例路径。
+
+The four I/O functions handle types, formats, and I/O without importing protection. The example shows entry-level checks before reading; use `"write"` before writing. `MARKDOWN_FILE` optionally points to the ignored `Memory/notes.md` example location.
 
 ```python
-from prototype.Core.File_read_and_write import file_read, file_write
-from prototype.Core.paths import MARKDOWN_FILE
-
-result = file_write(MARKDOWN_FILE, "# 随手记\n\n今天开始搭建鱼生。\n")
-text = file_read(MARKDOWN_FILE)
-```
-
-`MARKDOWN_FILE` 指向 `prototype/Memory/notes.md`，写入时才创建，沿用 Memory 目录的忽略规则。Markdown 不做语法解析，空字符串可用于清空文件，父目录按需创建，不自动追加换行。JSON 工具仅接受 `.json`；Markdown 工具仅接受 `.md`。路径可传字符串或 `Path`，相对路径以项目根目录为基准；解析后必须位于项目内，排除 `.env` 凭据、Git、环境及依赖缓存目录，写入还禁止进入 `Core`。这些文件检查不能代替后续完整的工具权限隔离。
-
-`MARKDOWN_FILE` points to `prototype/Memory/notes.md`, created on write and ignored with other memory data. Markdown is plain text: empty content clears the file, parent directories are created as needed, and no newline is added automatically. JSON tools accept only `.json`; text tools accept only `.md`. Paths accept strings or `Path` objects, with relative paths based on the project root. Resolved paths must stay inside the project, excluding `.env` credentials, Git, environments, and dependency caches. Writes into `Core` are blocked. These file checks do not replace full tool permission isolation.
-
-### 模型调用 / Model calls
-
-仅在尚无 `.env` 时，将根目录 `.env.example` 复制为 `.env`，手动填写 `DEEPSEEK_API_KEY=你的密钥`。当前加载器只读取该单行配置，支持成对单/双引号，不处理变量插值或行尾注释。不要提交 `.env`。
-
-If `.env` does not exist, copy `.env.example` to `.env` and fill in `DEEPSEEK_API_KEY`. The loader reads this single-line setting, supports matching quotes, and does not support interpolation or inline comments. Never commit `.env`.
-
-```python
-from prototype.Core.core import call_model
-from prototype.Core.common import read_text_file
+from prototype.Core.File_read_and_write import file_read
+from prototype.Core.Tools_protect import check_tool_path
 from prototype.Core.paths import INITIAL_PROMPT_FILE
 
-result = call_model([
-    {"role": "system", "content": read_text_file(INITIAL_PROMPT_FILE)},
-    {"role": "user", "content": "你好！"},
-])
-print(result["content"])
+check = check_tool_path(INITIAL_PROMPT_FILE, "read")
+if not check["allowed"]:
+    raise PermissionError(check["reason"])
+prompt = file_read(check["path"])
 ```
 
-初始提示词保存在 `prototype/PromptSQL/initial_prompt.md`，参考社区的大肥鱼 / 鲸鱼娘形象编写；来源和本项目的调整说明见 [prototype/PromptSQL/README.md](prototype/PromptSQL/README.md)。上例由调用方显式读取 Markdown 作为 system 消息，`core.py` 不自动插入提示词。
+这些是文件操作前的应用层检查；模型工具执行尚未接入，也不提供进程隔离。
 
-The initial prompt is stored in `prototype/PromptSQL/initial_prompt.md`, drawing on community whale-girl personas. Sources and Yusheng-specific choices are documented in [prototype/PromptSQL/README.md](prototype/PromptSQL/README.md). The caller explicitly loads the Markdown into a system message; `core.py` does not insert it automatically.
+These are application-level checks before file operations. Model tool execution is not connected, and process isolation is not provided.
 
-提示词中已加入用户指定的自主编写工具与运行内核边界，见「自主工具与运行内核」一节。当前尚未实现工具执行和运行时权限隔离，该约定仍是原型阶段的行为设定。
+## 模型调用与模块关系 / Model calls and module relationships
 
-The prompt includes the owner's tool-building autonomy and runtime-core boundaries. Tool execution and runtime permission isolation are not implemented yet; this remains a behavioral specification for the prototype.
+`core.py` 只负责模型请求及本地 `.env` 密钥配置。手动修改文件顶部的 `MODEL`、`BASE_URL`、`THINKING_TYPE`、`TIMEOUT` 调整参数；当前关闭思考、非流式、超时 60 秒且不自动重试。密钥加载器读取 UTF-8/BOM `.env` 中的单行 `DEEPSEEK_API_KEY`，支持成对引号，不处理插值或行尾注释。执行 `call_model()` 会产生实际 API 用量。
 
-执行 `call_model()` 会向 DeepSeek 发送传入消息并产生 API 用量。模型与参数在 `core.py` 中固定：`deepseek-flash`、`thinking.type="disabled"`、`stream=False`，超时 60 秒，暂不自动重试。返回结构如下；`usage` 缺失时为 `None`，调用方需检查 `finish_reason` 是否表示正常结束或长度截断。
-
-Calling `call_model()` sends the supplied messages to DeepSeek and incurs API usage. Settings are fixed in `core.py`: `deepseek-flash`, thinking disabled, non-streaming, a 60-second timeout, and no automatic retries. `usage` is `None` when absent; the caller must inspect `finish_reason` for completion or truncation.
+`core.py` handles model requests and local `.env` configuration. Edit `MODEL`, `BASE_URL`, `THINKING_TYPE`, and `TIMEOUT` at the top to adjust settings. Defaults disable thinking, use non-streaming output, set a 60-second timeout, and disable retries. The UTF-8/BOM key loader supports matching quotes, with no interpolation or inline comments. Calling `call_model()` incurs API usage.
 
 | 返回字段 / Field | 类型 / Type | 含义 / Meaning |
 | --- | --- | --- |
 | `content` | `str` | 回复正文 / Response text |
-| `reasoning` | `str` | 可选推理字段，无内容时为空 / Optional reasoning field, empty when absent |
-| `usage` | `dict` 或 `None` | API 用量 / API usage |
-| `tool_calls` | `list` | 工具调用请求，当前模块不执行 / Tool requests, not executed by this module |
-| `finish_reason` | `str` | 本次生成的结束原因 / Generation stop reason |
-| `message` | `dict` | 保留的原始 assistant 消息 / Preserved assistant message |
-
-### 调用关系 / Call structure
+| `reasoning` | `str` | 可选推理内容，无内容为空 / Optional reasoning, empty when absent |
+| `usage` | `dict` 或 `None` | 原始 API 用量 / API usage |
+| `tool_calls` | `list` | 工具请求，当前不执行 / Tool requests, currently not executed |
+| `finish_reason` | `str` | 结束原因 / Stop reason |
+| `message` | `dict` | 原始 assistant 消息 / Original assistant message |
 
 ```text
-prototype.main.main
-├── ChatSession → reset → read_text_file(INITIAL_PROMPT_FILE)
-└── 输入循环 / Input loop → _handle_input
-    ├── /clear → reset
-    └── 普通输入或 /retry → reply → call_model → DeepSeek
+main（每轮 / each turn）
+├── _read_context
+│   ├── Tools_protect.check_tool_path → 允许路径 / approved path
+│   └── File_read_and_write.Memory_json_read / file_read
+├── 获取输入 / input
+├── _reply → core.call_model → DeepSeek
+├── 打印回复 / print
+└── _save_memory
+    ├── Tools_protect.check_tool_path → 允许路径 / approved path
+    └── File_read_and_write.Memory_json_write
 
-文件工具调用方 / File tool caller
-├── Memory_json_write(memory, path) → resolve_tool_path → validate_memory
-│                                                       → write_json → write_text_file
-├── Memory_json_read(path) → resolve_tool_path → read_json → read_text_file
-│                                            → validate_memory
-├── file_read(path) → resolve_tool_path → read_text_file
-└── file_write(path, content) → resolve_tool_path → write_text_file
-
-call_model(messages) → _load_api_key → read_text_file
-                     → DeepSeek chat.completions.create
-
-Core/paths.py → 为各模块提供文件位置 / File locations for all modules
+paths.py → 路径与保护名单 / paths and protected lists
+common.py → 保留，不在运行链路中 / retained, not used by the runtime
 ```
 
-文件工具统一在 `prototype/Core/File_read_and_write.py`，它与模型调用模块互不导入；底层 JSON 与文本 I/O、路径检查集中在共用层。当前入口只编排初始 Prompt 与模型调用，记忆不会自动送给模型，也不会从模型回复中自动提取。当前不提供工具注册和 Agent 循环。
+三个功能模块互不导入，由 main 编排。初始 Prompt 来源与项目设定见 [PromptSQL 说明](prototype/PromptSQL/README.md)。
 
-File tools live in `prototype/Core/File_read_and_write.py` and do not import the model module. Shared helpers handle JSON/text I/O and path checks. The current entry coordinates only the initial prompt and model calls; memory is not automatically injected into prompts or extracted from responses. Tool registration and an agent loop are outside this initial implementation.
+The three functional modules do not import one another; main coordinates them. Prompt sources and project-specific behavior are documented in the [PromptSQL notes](prototype/PromptSQL/README.md).
 
 接口依据：[DeepSeek 首次调用](https://api-docs.deepseek.com/)、[思考模式开关](https://api-docs.deepseek.com/guides/thinking_mode/)、[Chat Completions 返回结构](https://api-docs.deepseek.com/api/create-chat-completion/)。
