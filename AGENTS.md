@@ -9,7 +9,7 @@
 - 原型语言与环境：Python 3.12.0，所有者创建的 venv；项目内解释器为 `myvenv/Scripts/python.exe`，已安装 `openai==3.41.0`。
 - 模型调用：`deepseek-flash`，关闭思考（`thinking.type="disabled"`），非流式（`stream=False`）。
 - 文件工具层：`prototype/Core/File_read_and_write.py`，提供 `Memory_json_write()`、`Memory_json_read()`、`file_read()`、`file_write()` 四个函数；后两者暂时只支持 `.md`，尚未注册给模型。
-- 聊天记忆：JSON，由所有者明确指定；当前将记忆用于可恢复聊天，默认文件为 `prototype/Memory/conversation.json`，格式为 `{"version": 1, "messages": [...]}`，按 user/assistant 完整消息对保存，保留原始 assistant 字段。旧 `memories.json` 不读取、不转换、不覆盖；长期事实记忆另行设计，暂不实现并发写入。
+- 聊天记忆：JSON，由所有者明确指定；当前将记忆用于可恢复聊天，默认文件为 `prototype/Memory/conversation.json`，格式为 `{"version": 1, "messages": [...]}`。用户输入和模型回复各自独立记录，完整成功轮次一起保存，保留原始 assistant 字段。每条记录另含 `embedding` 与 `embedding_model`，初始均为 `null`；已有向量时记录数值数组及其实际生成模型，两字段必须一起填写。旧记录缺少字段时只在返回副本补齐，正常写入时才保存；聊天请求移除这两个本地字段，当前不生成向量或执行相似度检索。旧 `memories.json` 不读取、不转换、不覆盖；长期事实记忆另行设计，暂不实现并发写入。
 - Markdown 数据示例路径登记为 `prototype/Memory/notes.md`，写入时才创建；初始 Prompt 默认从 `prototype/PromptSQL/initial_prompt.md` 读取。
 - 提示词：`prototype/PromptSQL/initial_prompt.md`，按社区大肥鱼二创特征编写；来源见 `prototype/PromptSQL/README.md`，由调用方读取后作为 system 消息传入。
 - 命令行入口：从仓库根目录执行 `myvenv/Scripts/python.exe -m prototype.main`；每轮读取聊天记忆、读取 Prompt、获取输入、调用 core、打印回复、写入记忆。支持 `/exit`；保存失败时可用 `/retry` 只重试写入，不重新请求模型。初始 Prompt 不写入聊天记忆，当前无清空聊天命令。

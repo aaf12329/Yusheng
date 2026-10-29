@@ -8,7 +8,8 @@ main()（每轮）
 └─ _save_memory → _checked_path → File_read_and_write.Memory_json_write
 数据流：conversation.json + initial_prompt.md + user_input → DeepSeek
         → 原始 assistant 消息 → 终端 → conversation.json。
-契约：只保存完整成功的 user/assistant 消息对；system Prompt 每轮读取，不混入聊天记忆。
+契约：user 与 assistant 各为独立记录，分别含 embedding / embedding_model；
+      只保存完整成功轮次，system Prompt 不写入记忆，向量元数据不发送给聊天接口。
 保存失败只重试本地写入，不重新请求模型；common 保留但不调用。
 运行：从仓库根目录执行 python -m prototype.main；导入本模块不读写文件或请求 API。
 """
@@ -62,10 +63,14 @@ def _save_memory(memory: dict[str, Any]) -> bool:
 
 # ② 模型编排：只发送文本消息，工具执行循环后续再接入。
 def _reply(memory: dict[str, Any], prompt: str, text: str) -> dict[str, Any]:
-    """组装 system、历史与当前输入并调用模型；由 main 调用，不修改记忆。"""
+    """去除向量元数据，再组装原始消息调用模型；由 main 调用，不修改记忆。"""
+    history = [
+        {key: value for key, value in record.items() if key not in {"embedding", "embedding_model"}}
+        for record in memory["messages"]
+    ]
     messages = [
         {"role": "system", "content": prompt},
-        *memory["messages"],
+        *history,
         {"role": "user", "content": text},
     ]
     result = call_model(messages)
@@ -98,7 +103,10 @@ def main() -> int:
             print(f"\n大肥鱼：{result['content']}\n")
             if result["finish_reason"] == "length":
                 print("提示：回复因长度限制截断；可继续输入让大肥鱼接着说。")
-            memory["messages"].extend([{"role": "user", "content": text}, result["message"]])
+            memory["messages"].extend([
+                {"role": "user", "content": text, "embedding": None, "embedding_model": None},
+                {**result["message"], "embedding": None, "embedding_model": None},
+            ])
             if not _save_memory(memory):
                 return 1
         except (EOFError, KeyboardInterrupt):

@@ -97,15 +97,34 @@ The conversation store is `prototype/Memory/conversation.json`, created on the f
 {
   "version": 1,
   "messages": [
-    {"role": "user", "content": "你好！"},
-    {"role": "assistant", "content": "你好，我是大肥鱼。"}
+    {
+      "role": "user",
+      "content": "你好！",
+      "embedding": null,
+      "embedding_model": null
+    },
+    {
+      "role": "assistant",
+      "content": "你好，我是大肥鱼。",
+      "embedding": null,
+      "embedding_model": null
+    }
   ]
 }
 ```
 
-`version` 必须为整数 `1`；`messages` 保存按顺序交替的完整 user/assistant 消息对，每条正文为非空字符串，保留原始 assistant 的额外字段。当前只支持文本聊天，不接受未处理的工具调用记录；格式错误报错，不当作空库覆盖。
+`version` 必须为整数 `1`；用户输入和模型回复各为一条独立记录，按顺序交替保存完整成功轮次。每条正文为非空字符串，保留原始 assistant 的额外字段。每条记录分别拥有 `embedding` 和 `embedding_model`，调用聊天接口时移除这两个本地字段，只传消息本身。当前只支持文本聊天，不接受未处理的工具调用记录；格式错误报错，不当作空库覆盖。
 
-`version` is the integer `1`. `messages` contains complete alternating user/assistant pairs with nonempty text, preserving extra assistant fields. Only text chat is supported; unresolved tool calls and malformed history raise errors rather than becoming an empty store.
+`version` is the integer `1`. Each user input and assistant reply is a separate record; complete successful turns are saved in order, preserving extra assistant fields. Each record has its own `embedding` and `embedding_model`. Both local fields are removed before sending messages to the chat API. Only text chat is supported; unresolved tool calls and malformed history raise errors rather than becoming an empty store.
+
+| 向量字段 / Embedding field | 含义 / Meaning |
+| --- | --- |
+| `embedding` | 当前为 `null`；生成后保存非空数值数组。 / Currently `null`; later a nonempty numeric vector. |
+| `embedding_model` | 当前为 `null`；有向量时记录实际生成该向量的模型名称或版本。 / Currently `null`; identifies the model/version that produced the stored vector. |
+
+两个字段一起为空，或一起填写；向量不接受非有限数值或布尔值。旧记录缺少字段时，读取返回的副本会补齐为 `null`，直到正常写入时才保存到磁盘。当前不生成向量、不调用 embedding 服务、不执行相似度检索。以后更换向量模型时，保留旧向量对应的模型标识，并按模型与向量维度区分比较。
+
+Both fields are null together or populated together. Vector values must be finite numbers, not booleans. Missing fields in older records are filled with nulls in the returned copy and reach disk only on a normal write. No embedding generation, service calls, or similarity retrieval are implemented. When changing embedding models, retain each stored vector's producer identity and compare compatible models and dimensions.
 
 | 函数 / Function | 行为与返回 / Behavior and return |
 | --- | --- |

@@ -2,18 +2,22 @@
 
 函数结构与真实调用关系：
 ├─ Memory_json_read(path) → _file_path → _read_text → json.loads → _validate_memory
-├─ Memory_json_write(memory, path) → _file_path → _validate_memory → json.dumps → _write_text
+│                                                              → _validate_embedding
+├─ Memory_json_write(memory, path) → _file_path → _validate_memory → _validate_embedding
+│                                            → json.dumps → _write_text
 ├─ file_read(path) → _file_path → _read_text
 └─ file_write(path, content) → _file_path → _write_text
 调用：入口先通过 Tools_protect 检查路径，再调用四个公开读写函数；common 暂不使用。
-数据流：.json ↔ {"version": 1, "messages": [原始 user/assistant 消息]}；.md ↔ str。
+数据流：.json ↔ {"version": 1, "messages": [原始消息 + embedding / embedding_model]}；.md ↔ str。
 契约：JSON 读返回完整文档，缺失返回空库；写返回 {"path": str, "count": 消息数}。
       Markdown 读返回 str，缺失报错；写返回 {"path": str, "characters": 字符数}。
 写入完整覆盖、UTF-8 原子替换、单写入者；不自动迁移旧 memories 格式。
+缺失的向量字段在返回文档中补为 None；不修改调用方传入的文档或自动生成向量。
 本层只检查文件类型与数据格式，路径权限必须由调用入口先行检查。
 """
 
 import json
+import math
 import os
 import tempfile
 from pathlib import Path
@@ -62,8 +66,23 @@ def _write_text(path: Path, content: str) -> None:
             temporary_path.unlink(missing_ok=True)
 
 
+def _validate_embedding(message: dict[str, Any], index: int) -> None:
+    """检查向量与其生成模型是否配套且数值有限；由记忆校验调用，不生成向量。"""
+    vector = message.get("embedding")
+    model = message.get("embedding_model")
+    if vector is None and model is None:
+        return
+    if not isinstance(model, str) or not model.strip():
+        raise ValueError(f"第 {index} 条消息有向量时，embedding_model 必须填写生成模型名称。")
+    if not isinstance(vector, list) or not vector:
+        raise ValueError(f"第 {index} 条消息的 embedding 必须是非空数值列表，并与模型名称一起填写。")
+    for value in vector:
+        if type(value) not in (int, float) or (type(value) is float and not math.isfinite(value)):
+            raise ValueError(f"第 {index} 条消息的 embedding 只能包含有限数值，不能包含布尔值。")
+
+
 def _validate_memory(memory: Any) -> dict[str, Any]:
-    """校验完整文本对话且保留消息额外字段；由 JSON 读写共用。"""
+    """校验完整文本对话与向量字段，返回补齐字段的副本；由 JSON 读写共用。"""
     if not isinstance(memory, dict) or type(memory.get("version")) is not int or memory["version"] != 1:
         raise ValueError("聊天记忆必须是 version 为整数 1 的 JSON 对象。")
     messages = memory.get("messages")
@@ -71,6 +90,7 @@ def _validate_memory(memory: Any) -> dict[str, Any]:
         raise ValueError("聊天记忆需要 messages 列表；旧 memories 格式请保留另存，不自动转换。")
     if len(messages) % 2:
         raise ValueError("聊天记忆需要完整的 user/assistant 消息对；请修复后再继续。")
+    records = []
     for index, message in enumerate(messages):
         expected_role = "user" if index % 2 == 0 else "assistant"
         if not isinstance(message, dict) or message.get("role") != expected_role:
@@ -80,7 +100,13 @@ def _validate_memory(memory: Any) -> dict[str, Any]:
             raise ValueError(f"第 {index + 1} 条消息的 content 必须是非空字符串。")
         if message.get("tool_calls") or message.get("function_call"):
             raise ValueError("当前聊天记忆只支持文本对话；工具调用记录需接入工具循环后处理。")
-    return memory
+        _validate_embedding(message, index + 1)
+        records.append({
+            **message,
+            "embedding": message.get("embedding"),
+            "embedding_model": message.get("embedding_model"),
+        })
+    return {**memory, "messages": records}
 
 
 # ② 四个公开入口：只承担记忆 JSON 与 Prompt Markdown 的读写。
