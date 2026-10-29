@@ -5,11 +5,11 @@
 - 项目名：鱼生 / Yusheng；陪伴角色名：大肥鱼 / Dafeiyu。
 - 远程仓库：[aaf12329/Yusheng](https://github.com/aaf12329/Yusheng)，本地远程名为 `origin`。
 - 目标：探索持续记忆、按需回忆与受控的自主活动。
-- 当前阶段：已编写 `prototype/` 中的 JSON 记忆读写与 DeepSeek 调用模块；按本次指令未运行测试或真实 API 调用。
+- 当前阶段：Python 原型阶段，代码、提示词与记忆目录均在 `prototype/` 下；已编写 JSON 记忆读写与 DeepSeek 调用模块，按当前指令未运行测试或真实 API 调用。
 - 原型语言与环境：Python 3.12.0，所有者创建的 venv；项目内解释器为 `myvenv/Scripts/python.exe`，已安装 `openai==3.41.0`。
 - 模型调用：`deepseek-flash`，关闭思考（`thinking.type="disabled"`），非流式（`stream=False`）。
-- 记忆存储：JSON，由所有者明确指定；默认文件为 `Memory/memories.json`。读写函数分开，暂不实现并发写入。
-- 提示词：`PromptSQL/initial_prompt.md`，按社区大肥鱼二创特征编写；来源见 `PromptSQL/README.md`，由调用方读取后作为 system 消息传入。
+- 记忆存储：JSON，由所有者明确指定；默认文件为 `prototype/Memory/memories.json`。读写函数分开，暂不实现并发写入。
+- 提示词：`prototype/PromptSQL/initial_prompt.md`，按社区大肥鱼二创特征编写；来源见 `prototype/PromptSQL/README.md`，由调用方读取后作为 system 消息传入。
 - 项目状态、调用方式与数据契约以 `README.md` 为准；入口编排、自动检索和工具循环尚未实现。
 - 初始化日期：2026-10-29。
 

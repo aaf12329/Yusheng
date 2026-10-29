@@ -29,9 +29,9 @@ Yusheng's predecessor projects are **DeepSeek_port** and **My_Agent**, both avai
 
 ## 当前状态 / Current status
 
-**模块原型阶段：已编写 JSON 记忆读写和 DeepSeek 核心调用模块。** 使用所有者创建的 `myvenv`（Python 3.12.0），模型固定 `deepseek-flash`，关闭思考，非流式返回。按本次要求未运行测试、未进行真实 API 调用；尚未接入对话循环、自动检索或工具执行。
+**Python 原型阶段：代码、提示词和记忆目录均放在 `prototype/` 下。** 已编写 JSON 记忆读写和 DeepSeek 核心调用模块。使用所有者创建的 `myvenv`（Python 3.12.0），模型固定 `deepseek-flash`，关闭思考，非流式返回。按本次要求未运行测试、未进行真实 API 调用；尚未接入对话循环、自动检索或工具执行。
 
-**Module prototype stage: JSON memory read/write and a DeepSeek adapter have been written.** The owner's `myvenv` uses Python 3.12.0. The adapter fixes the model to `deepseek-flash`, disables thinking, and returns non-streaming responses. No tests or live API calls were run, as requested. Conversation orchestration, automatic retrieval, and tool execution are not implemented yet.
+**Python prototype stage: code, prompts, and the memory directory live under `prototype/`.** JSON memory read/write and a DeepSeek adapter have been written. The owner's `myvenv` uses Python 3.12.0. The adapter fixes the model to `deepseek-flash`, disables thinking, and returns non-streaming responses. No tests or live API calls were run, as requested. Conversation orchestration, automatic retrieval, and tool execution are not implemented yet.
 
 ## 初步方向 / Initial direction
 
@@ -59,23 +59,23 @@ Yusheng/
 ├── .gitignore     本地数据与生成物忽略规则 / Local data and generated-file exclusions
 ├── .env.example   本地密钥文件模板 / Local credential template
 ├── requirements.txt
-├── PromptSQL/
-│   ├── initial_prompt.md  大肥鱼初始提示词 / Initial persona prompt
-│   └── README.md          提示词用途与社区参考 / Usage and community references
-├── Memory/
-│   └── .gitkeep           保留目录，实际记忆忽略 / Tracked placeholder only
 └── prototype/
     ├── __init__.py
     ├── paths.py          路径地址簿 / File locations
     ├── common.py         共用 JSON I/O 与格式校验 / Shared I/O and validation
     ├── memory_read.py    记忆读取 / Memory reading
     ├── memory_write.py   记忆写入 / Memory writing
-    └── core.py           DeepSeek 核心调用 / DeepSeek adapter
+    ├── core.py           DeepSeek 核心调用 / DeepSeek adapter
+    ├── PromptSQL/
+    │   ├── initial_prompt.md  大肥鱼初始提示词 / Initial persona prompt
+    │   └── README.md          提示词用途与社区参考 / Usage and community references
+    └── Memory/
+        └── .gitkeep           保留目录，实际记忆忽略 / Tracked placeholder only
 ```
 
-真实聊天记录、记忆库、凭据和运行数据存放在本地，不提交到仓库。`Memory/memories.json` 首次写入时才创建；`Memory/` 仅跟踪占位文件。不会在导入模块时创建文件或发起网络请求。
+真实聊天记录、记忆库、凭据和运行数据存放在本地，不提交到仓库。`prototype/Memory/memories.json` 首次写入时才创建；`prototype/Memory/` 仅跟踪占位文件。不会在导入模块时创建文件或发起网络请求。
 
-Real conversations, memory stores, credentials, and runtime data stay local and are excluded from version control. `Memory/memories.json` is created on the first write; only the directory placeholder is tracked. Importing modules does not create files or make network requests.
+Real conversations, memory stores, credentials, and runtime data stay local and are excluded from version control. `prototype/Memory/memories.json` is created on the first write; only the directory placeholder is tracked. Importing modules does not create files or make network requests.
 
 ## 原型用法 / Prototype usage
 
@@ -135,9 +135,9 @@ result = call_model([
 print(result["content"])
 ```
 
-初始提示词保存在 `PromptSQL/initial_prompt.md`，参考社区的大肥鱼 / 鲸鱼娘形象编写；来源和本项目的调整说明见 [PromptSQL/README.md](PromptSQL/README.md)。上例由调用方显式读取 Markdown 作为 system 消息，`core.py` 不自动插入提示词。
+初始提示词保存在 `prototype/PromptSQL/initial_prompt.md`，参考社区的大肥鱼 / 鲸鱼娘形象编写；来源和本项目的调整说明见 [prototype/PromptSQL/README.md](prototype/PromptSQL/README.md)。上例由调用方显式读取 Markdown 作为 system 消息，`core.py` 不自动插入提示词。
 
-The initial prompt is stored in `PromptSQL/initial_prompt.md`, drawing on community whale-girl personas. Sources and Yusheng-specific choices are documented in [PromptSQL/README.md](PromptSQL/README.md). The caller explicitly loads the Markdown into a system message; `core.py` does not insert it automatically.
+The initial prompt is stored in `prototype/PromptSQL/initial_prompt.md`, drawing on community whale-girl personas. Sources and Yusheng-specific choices are documented in [prototype/PromptSQL/README.md](prototype/PromptSQL/README.md). The caller explicitly loads the Markdown into a system message; `core.py` does not insert it automatically.
 
 执行 `call_model()` 会向 DeepSeek 发送传入消息并产生 API 用量。模型与参数在 `core.py` 中固定：`deepseek-flash`、`thinking.type="disabled"`、`stream=False`，超时 60 秒，暂不自动重试。返回结构如下；`usage` 缺失时为 `None`，调用方需检查 `finish_reason` 是否表示正常结束或长度截断。
 

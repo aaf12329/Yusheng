@@ -3,7 +3,7 @@
 结构：read_memory(path) → common.read_json → common.read_text_file；
                          → common.validate_memory。
 调用：由外部入口或手动 Python 调用 read_memory。
-数据流：Memory/memories.json → JSON 对象 → 校验后的完整记忆文档。
+数据流：prototype/Memory/memories.json → JSON 对象 → 校验后的完整记忆文档。
 返回：{"version": 1, "memories": list}；文件不存在时返回空文档，不创建文件。
 """
 

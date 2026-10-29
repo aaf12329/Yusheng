@@ -1,5 +1,9 @@
 # PromptSQL · 提示词文件
 
+本目录位于 `prototype/PromptSQL/`，与原型代码、`prototype/Memory/` 一起维护；项目当前处于 Python 原型阶段。
+
+This directory lives at `prototype/PromptSQL/` alongside the Python prototype code and `prototype/Memory/`.
+
 `initial_prompt.md` 保存发给模型的初始系统提示词。`PromptSQL` 按所有者指定命名，目前是 Markdown 提示词目录，不使用 SQL 数据库。
 
 `initial_prompt.md` contains the initial system prompt. The directory name follows the owner's choice; prompts are Markdown files, with no SQL database involved.

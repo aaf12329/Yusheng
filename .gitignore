@@ -7,8 +7,8 @@
 
 # Personal conversations, memories, and runtime data
 /data/
-/Memory/*
-!/Memory/.gitkeep
+/prototype/Memory/*
+!/prototype/Memory/.gitkeep
 /memories/
 /conversations/
 /logs/
