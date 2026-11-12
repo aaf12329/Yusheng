@@ -131,7 +131,7 @@ def _reply(memory: dict[str, Any], prompt: str, text: str) -> dict[str, Any]:
 # ③ 简单对话循环：六步顺序直接体现在 main 中。
 def main() -> int:
     """循环读文件、获取输入、调用模型、打印和保存；由模块启动入口调用。"""
-    print("鱼生 · 大肥鱼 | 输入 /exit 退出；Ctrl+C 或输入结束也可退出。")
+    print("吸引子 Attractor · 大肥鱼 | 输入 /exit 退出；Ctrl+C 或输入结束也可退出。")
     print("每轮读取 Prompt 和聊天记忆，回复后保存；发送消息会调用 DeepSeek API。\n")
     while True:
         try:

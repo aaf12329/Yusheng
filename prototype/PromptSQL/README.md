@@ -10,9 +10,9 @@ This directory lives at `prototype/PromptSQL/` alongside the Python prototype co
 
 ## 社区参考 / Community references
 
-查阅日期：2026-10-29。以下为作者各自项目中的社区二创设定，不代表统一的官方人设。本项目参考其中的鲸鱼娘、白饭、俏皮嘴硬和偶尔摸鱼等特征，重新编写文本；记忆真实性、工具能力和资源边界结合鱼生当前原型补充。
+查阅日期：2026-10-29。以下为作者各自项目中的社区二创设定，不代表统一的官方人设。本项目参考其中的鲸鱼娘、白饭、俏皮嘴硬和偶尔摸鱼等特征，重新编写文本；记忆真实性、工具能力和资源边界结合吸引子当前原型补充。
 
-Consulted on 2026-10-29. These are community interpretations for their respective projects, not a canonical official persona. Yusheng's prompt is newly written, drawing on shared traits and adding behavior suited to the current memory and tool capabilities.
+Consulted on 2026-10-29. These are community interpretations for their respective projects, not a canonical official persona. Attractor's prompt is newly written, drawing on shared traits and adding behavior suited to the current memory and tool capabilities.
 
 - [Kaalia0912 / dsh-whale-musume-persona](https://github.com/Kaalia0912/dsh-whale-musume-persona)：鲸鱼娘的性格和语气参考。
 - [YunYueSama / codex-deepseek-pet · 角色设定](https://github.com/YunYueSama/codex-deepseek-pet/blob/main/docs/%E8%A7%92%E8%89%B2%E8%AE%BE%E5%AE%9A.md)：贪吃、爱面子、日常交流与认真工作的平衡参考。
@@ -25,4 +25,4 @@ Only the contents of `initial_prompt.md` should be sent as the system prompt. So
 
 `initial_prompt.md` 的「自主工具与运行内核」一节来自所有者于 2026-10-29 的明确指示，定义自主编写工具与独立行动的内核边界，不属于引用的社区角色设定。当前原型已有 `Tools_protect.py` 的路径保护名单检查，由命令行入口在文件操作前调用；模型工具执行与进程权限隔离尚未接入，提示词约定和路径检查不能代替完整的运行隔离。
 
-The autonomy section follows the owner's explicit instruction on 2026-10-29 and is specific to Yusheng. The command-line entry now checks protected paths through Tools_protect.py before file operations. Model tool execution and process permission isolation are not connected yet; prompt rules and path checks do not provide full runtime isolation.
+The autonomy section follows the owner's explicit instruction on 2026-10-29 and is specific to Attractor. The command-line entry now checks protected paths through Tools_protect.py before file operations. Model tool execution and process permission isolation are not connected yet; prompt rules and path checks do not provide full runtime isolation.

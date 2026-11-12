@@ -1,9 +1,10 @@
-# Yusheng · AI 接手入口
+# Attractor · AI 接手入口
 
 ## 项目事实
 
-- 项目名：鱼生 / Yusheng；陪伴角色名：大肥鱼 / Dafeiyu。
-- 远程仓库：[aaf12329/Yusheng](https://github.com/aaf12329/Yusheng)，本地远程名为 `origin`。
+- 项目名：吸引子 / Attractor；陪伴角色名：大肥鱼 / Dafeiyu。2026-11-12 从鱼生 / Yusheng 更名；名称寓意记忆与互动累积形成稳定的性格与自我。
+- 本机目录仍为 `Yusheng/`，保留现有虚拟环境位置；目录名与项目展示名独立。
+- 本地 `origin` 当前仍指向 [aaf12329/Yusheng](https://github.com/aaf12329/Yusheng)；所有者负责 GitHub 仓库改名，完成后再同步实际远程地址，不将计划地址视为已验证事实。
 - 目标：探索持续记忆、按需回忆与受控的自主活动。
 - 当前阶段：Python 原型阶段，运行核心集中在 `prototype/Core/`，提示词与记忆目录位于其同级；已编写文件读写、路径保护、DeepSeek 调用及持久化命令行聊天，按当前指令未运行测试、程序或真实 API 调用。
 - 原型语言与环境：Python 3.12.0，所有者创建的 venv；项目内解释器为 `myvenv/Scripts/python.exe`，已安装 `openai==3.41.0`。

@@ -1,18 +1,22 @@
-# 鱼生 · Yusheng
+# 吸引子 · Attractor
 
 **给大肥鱼完整的一生。**
 
 *A full life for Dafeiyu.*
 
-CH:探索 AI 的持续记忆、按需回忆与自主活动，给大肥鱼完整的一生。
+CH:探索持续记忆、按需回忆与受控自主活动的 AI 陪伴原型。
 
-EN:Exploring persistent memory, on-demand recall, and autonomous activities for an AI companion—a full life for Dafeiyu.
+EN:An AI companion prototype exploring persistent memory, on-demand recall, and controlled autonomy.
 
 ## 项目设想 / Vision
 
-鱼生是一个探索 AI 持续记忆与日常活动的个人陪伴项目。希望大肥鱼能记得聊过的事情，把过去的经历带到下一天，也能在允许的范围内找一些自己想做的事情。
+吸引子（Attractor）是一个探索 AI 持续记忆与日常活动的个人陪伴项目。希望大肥鱼能记得聊过的事情，把过去的经历带到下一天，也能在允许的范围内找一些自己想做的事情。
 
-Yusheng is a personal AI companion project exploring persistent memory and everyday activities. It aims to help Dafeiyu recall past conversations, carry experiences into the next day, and choose activities within defined limits.
+Attractor is a personal AI companion project exploring persistent memory and everyday activities. It aims to help Dafeiyu recall past conversations, carry experiences into the next day, and choose activities within defined limits.
+
+项目名取自动力系统中的“吸引子”，寓意记忆与互动不断累积，逐渐形成稳定的性格与自我。这是项目的设计寓意；陪伴角色仍叫大肥鱼（Dafeiyu）。项目于 2026-11-12 从“鱼生 / Yusheng”更名。
+
+The name comes from attractors in dynamical systems, expressing the design ambition that accumulated memories and interactions gradually shape a stable personality and sense of self. The companion remains Dafeiyu. The project was renamed from Yusheng on 2026-11-12.
 
 最初的设想来自 CoMind 中的[《给大肥鱼完整的一生》](https://github.com/aaf12329/CoMind/blob/main/02_%E6%80%9D%E8%80%83%E4%B8%8E%E5%86%99%E4%BD%9C/articles/%E7%BB%99%E5%A4%A7%E8%82%A5%E9%B1%BC%E5%AE%8C%E6%95%B4%E7%9A%84%E4%B8%80%E7%94%9F.html)。项目从保存经历开始，逐步尝试近期缓存、长期记忆、整理压缩与按需检索。原始记录保留，回忆中的重新表达与原始事实分开。
 
@@ -20,9 +24,9 @@ The idea began with the essay [“A Full Life for Dafeiyu”](https://github.com
 
 ## 前身项目 / Predecessor projects
 
-Yusheng 的前身项目是 **DeepSeek_port** 与 **My_Agent**，均可在 `history_code` 仓库中查看。
+Attractor 的前身项目是 **DeepSeek_port** 与 **My_Agent**，均可在 `history_code` 仓库中查看。
 
-Yusheng's predecessor projects are **DeepSeek_port** and **My_Agent**, both available in the `history_code` repository.
+Attractor's predecessor projects are **DeepSeek_port** and **My_Agent**, both available in the `history_code` repository.
 
 - [DeepSeek_port](https://github.com/aaf12329/history_code/tree/main/DeepSeek_port)
 - [My_Agent](https://github.com/aaf12329/history_code/tree/main/My_Agent)
@@ -40,7 +44,7 @@ Memory currently restores full conversations. Long-term factual memory, compress
 ## 仓库结构 / Repository layout
 
 ```text
-Yusheng/
+<project-root>/
 ├── README.md
 ├── AGENTS.md
 ├── .gitignore
@@ -70,9 +74,9 @@ The core, startup entry, and package-loading code are maintained by humans and a
 
 ## 启动 / Run
 
-从仓库根目录执行。仅在没有 `.env` 时，将 `.env.example` 复制为 `.env`，填写 `DEEPSEEK_API_KEY`，不要提交密钥。现有环境无需本次安装；其他环境可按 `requirements.txt` 安装依赖。
+从仓库根目录执行。本机目录仍为 `Yusheng/`，本次更名保留现有目录与虚拟环境位置。仅在没有 `.env` 时，将 `.env.example` 复制为 `.env`，填写 `DEEPSEEK_API_KEY`，不要提交密钥。现有环境无需本次安装；其他环境可按 `requirements.txt` 安装依赖。
 
-Run from the repository root. If `.env` does not exist, copy `.env.example` to `.env` and fill in `DEEPSEEK_API_KEY`. Never commit credentials. The existing environment needs no installation for this change; other environments can install from `requirements.txt`.
+Run from the repository root. The local folder remains `Yusheng/`, preserving the existing directory and virtual environment locations. If `.env` does not exist, copy `.env.example` to `.env` and fill in `DEEPSEEK_API_KEY`. Never commit credentials. The existing environment needs no installation for this change; other environments can install from `requirements.txt`.
 
 ```powershell
 .\myvenv\Scripts\python.exe -m prototype.main
