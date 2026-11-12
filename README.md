@@ -41,6 +41,21 @@ Attractor's predecessor projects are **DeepSeek_port** and **My_Agent**, both av
 
 Memory currently restores full conversations. Long-term factual memory, compression/retrieval, autonomous activities, and model tool registration/execution remain future work.
 
+## 两种运行形态（规划） / Planned runtime forms
+
+项目计划提供独立运行版与 [DeepSeek Harness（DSH）](https://github.com/deepseek-ai/deepseek-harness) 插件版。当前继续开发 Python 原型，现有命令行入口作为独立运行版的起点；DSH 插件尚未实现，具体插件接口、目标版本和加载方式待开发时确认。
+
+The project will offer a standalone edition and a [DeepSeek Harness (DSH)](https://github.com/deepseek-ai/deepseek-harness) plugin edition. Development continues with the Python prototype, whose command-line entry is the starting point for the standalone edition. The DSH plugin is not implemented; its specific plugin interface, target version, and loading mechanism will be confirmed during development.
+
+| 形态 / Form | 职责 / Responsibility | 状态 / Status |
+| --- | --- | --- |
+| 独立运行版 / Standalone | 自行启动并管理对话循环、输入输出及模型调用。 / Own startup, the conversation loop, I/O, and model calls. | 已编写命令行原型，尚未运行验证。 / CLI prototype written, runtime unverified. |
+| DSH 插件版 / DSH plugin | 通过 DSH 的插件接口接收消息、返回回复并接入宿主生命周期。 / Receive messages, return replies, and integrate with the host lifecycle through its plugin interface. | 待确认 DSH 接口后设计实现。 / Design and implementation pending confirmation of the DSH interface. |
+
+实现方向是共用记忆、Prompt、路径保护等核心逻辑，为两种形态分别提供入口适配。模型调用由独立版直接管理，插件版是否使用宿主提供的调用能力，要按 DSH 接口决定。两份交付物优先从同一份核心代码构建；运行数据默认各自保存，暂不设计跨进程共享写入。当前目录结构和现有调用链保持原型状态，尚未拆出共享包或插件目录。
+
+The intended design shares core memory, prompt, and path-protection logic with a separate entry adapter for each form. The standalone edition manages model calls directly; whether the plugin uses host-provided model access depends on DSH's interface. Prefer building both deliverables from one core codebase. Runtime data stays separate by default, with no cross-process shared writes planned. The current prototype layout and call chain remain in place; no shared package or plugin directory has been extracted yet.
+
 ## 仓库结构 / Repository layout
 
 ```text
