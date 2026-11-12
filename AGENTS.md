@@ -7,7 +7,7 @@
 - 本地 `origin` 当前仍指向 [aaf12329/Yusheng](https://github.com/aaf12329/Yusheng)；所有者负责 GitHub 仓库改名，完成后再同步实际远程地址，不将计划地址视为已验证事实。
 - 目标：探索持续记忆、按需回忆与受控的自主活动。
 - 交付规划（2026-11-12）：提供独立运行版和 [DeepSeek Harness（DSH）](https://github.com/deepseek-ai/deepseek-harness) 插件版，目标平台已由所有者确认。当前命令行原型是独立版的起点；插件尚未实现，具体接口、目标版本和加载方式待开发时确认。计划共用核心逻辑、分别适配入口；插件模型调用是否复用宿主能力待接口确认。当前未拆共享包或插件目录，两种形态运行数据默认分开，不引入跨进程共享写入。详细规划以 README 为准。
-- 当前阶段：Python 原型阶段，运行核心集中在 `prototype/Core/`，提示词与记忆目录位于其同级；已编写文件读写、路径保护、DeepSeek 调用及持久化命令行聊天，按当前指令未运行测试、程序或真实 API 调用。
+- 当前阶段：Python 原型验证阶段，用于验证陪伴、记忆与受控自主活动的设计；独立运行版和 DSH 插件版为后续交付目标。运行核心集中在 `prototype/Core/`，提示词与记忆目录位于其同级；已编写文件读写、路径保护、DeepSeek 调用及持久化命令行聊天，按当前指令未运行测试、程序或真实 API 调用，不能将阶段名称理解为已通过运行验证。
 - 原型语言与环境：Python 3.12.0，所有者创建的 venv；项目内解释器为 `myvenv/Scripts/python.exe`，已安装 `openai==3.41.0`。
 - 模型调用：`deepseek-flash`，关闭思考（`thinking.type="disabled"`），非流式（`stream=False`）。
 - 文件工具层：`prototype/Core/File_read_and_write.py`，仅定义 `Memory_json_write()`、`Memory_json_read()`、`file_read()`、`file_write()` 四个函数，不额外添加辅助函数；只承担文件后缀、基本输入类型和实际 I/O，聊天结构与向量校验在 `main.py`。后两者暂时只支持 `.md`，尚未注册给模型。

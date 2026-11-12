@@ -33,9 +33,9 @@ Attractor's predecessor projects are **DeepSeek_port** and **My_Agent**, both av
 
 ## 当前状态 / Current status
 
-**Python 原型阶段。** 已编写命令行聊天、JSON 聊天记忆持久化、Markdown Prompt 读写、路径保护和 DeepSeek 调用。当前模型为 `deepseek-flash`，关闭思考，非流式返回；使用所有者创建的 Python 3.12.0 环境及 `openai==3.41.0`。按要求未运行测试、程序或真实 API 调用，运行效果尚未验证。
+**当前处于 Python 原型验证阶段。** 本阶段用于验证陪伴、记忆与受控自主活动的设计，独立运行版和 DSH 插件版均为后续交付目标。已编写命令行聊天、JSON 聊天记忆持久化、Markdown Prompt 读写、路径保护和 DeepSeek 调用。当前模型为 `deepseek-flash`，关闭思考，非流式返回；使用所有者创建的 Python 3.12.0 环境及 `openai==3.41.0`。按要求未运行测试、程序或真实 API 调用，运行效果尚未验证。
 
-**Python prototype stage.** Command-line chat, persistent JSON conversation memory, Markdown prompt I/O, path protection, and DeepSeek calls have been written. Defaults use `deepseek-flash` with thinking disabled and non-streaming output. The owner's environment uses Python 3.12.0 and `openai==3.41.0`. No tests, program execution, or live API calls were performed as requested; runtime behavior remains unverified.
+**Currently in the Python prototype validation stage.** This stage is intended to validate the design of companionship, memory, and controlled autonomy; the standalone and DSH plugin editions are future deliverables. Command-line chat, persistent JSON conversation memory, Markdown prompt I/O, path protection, and DeepSeek calls have been written. Defaults use `deepseek-flash` with thinking disabled and non-streaming output. The owner's environment uses Python 3.12.0 and `openai==3.41.0`. No tests, program execution, or live API calls were performed as requested; runtime behavior remains unverified.
 
 当前“记忆”先用于恢复完整聊天。长期事实记忆、压缩检索、自主活动及模型工具注册与执行循环仍待实现。
 
